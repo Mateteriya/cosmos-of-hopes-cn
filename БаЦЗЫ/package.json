@@ -1,0 +1,9 @@
+{
+  "name": "bazi-calculator",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "lunisolar": "^2.6.0",
+    "moment-timezone": "^0.6.0"
+  }
+}
