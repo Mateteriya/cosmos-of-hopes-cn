@@ -27,18 +27,11 @@ const nextConfig: NextConfig = {
   },
   
   // Настройки для поддержки динамических импортов ES модулей
-  experimental: {
-    serverComponentsExternalPackages: ['lunisolar', 'moment-timezone'],
-  },
+  // В Next.js 16 используется serverExternalPackages вместо experimental.serverComponentsExternalPackages
+  serverExternalPackages: ['lunisolar', 'moment-timezone'],
   
-  // Разрешаем импорт из папки БаЦЗЫ
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Для серверной стороны разрешаем внешние модули
-      config.externals = config.externals || [];
-    }
-    return config;
-  },
+  // Turbopack конфигурация (пустая, так как используем стандартные настройки)
+  turbopack: {},
 };
 
 export default nextConfig;
