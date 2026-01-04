@@ -567,7 +567,7 @@ export default function MagicAmuletTransformation({
 
     const timer3 = setTimeout(() => {
       onComplete();
-    }, 5500);
+    }, 8000); // Увеличено до 8 секунд (было 5.5) - анимация завершается через 3 сек, добавляем 5 секунд для просмотра результата
 
     return () => {
       clearTimeout(timer1);

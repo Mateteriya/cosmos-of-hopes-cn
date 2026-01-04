@@ -5,16 +5,133 @@
  * Упрощённая версия для создания амулетов с китайскими символами
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import type { AmuletParams, AmuletSymbol, BaziElement } from '@/types/amulet';
 import { ELEMENT_COLORS, AMULET_SYMBOLS, BAZI_ELEMENTS } from '@/types/amulet';
 import MagicAmuletTransformation from './MagicAmuletTransformation';
+import BaziForm from './BaziForm';
+import BaziResults from './BaziResults';
 
 interface AmuletConstructorProps {
   onSave: (params: AmuletParams) => Promise<void>;
 }
 
 export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
+  // Проверка авторизации пользователя
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [useBaziForecast, setUseBaziForecast] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  
+  // DEV MODE: для разработчика (пока что для теста)
+  const [devMode, setDevMode] = useState(false);
+  
+  // Состояния для калькулятора Бацзы
+  const [baziLoading, setBaziLoading] = useState(false);
+  const [baziAnalysis, setBaziAnalysis] = useState<any>(null);
+  const [baziContent, setBaziContent] = useState<any>(null);
+  const [baziError, setBaziError] = useState<string | null>(null);
+
+  // Отладка: логируем изменения состояний
+  useEffect(() => {
+    console.log('Состояния калькулятора:', { 
+      useBaziForecast, 
+      isAuthenticated, 
+      devMode, 
+      showAuthPrompt,
+      hasAnalysis: !!baziAnalysis 
+    });
+  }, [useBaziForecast, isAuthenticated, devMode, showAuthPrompt, baziAnalysis]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseAnonKey) {
+          console.log('Supabase credentials not found, setting isAuthenticated to false');
+          setIsAuthenticated(false);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { data: { user } } = await supabase.auth.getUser();
+        const authenticated = !!user;
+        console.log('Auth check result:', authenticated);
+        setIsAuthenticated(authenticated);
+      } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  const handleBaziForecastClick = () => {
+    console.log('handleBaziForecastClick called', { isAuthenticated, devMode });
+    if (isAuthenticated || devMode) {
+      setUseBaziForecast(true);
+      setShowAuthPrompt(false);
+      setBaziError(null);
+      setBaziAnalysis(null);
+      setBaziContent(null);
+      console.log('Калькулятор открыт');
+    } else {
+      setShowAuthPrompt(true);
+      setUseBaziForecast(false);
+      console.log('Показан промпт авторизации');
+    }
+  };
+
+  const handleBaziSubmit = async (data: { dateTime: string; gender: 'male' | 'female'; timezone: string }) => {
+    setBaziLoading(true);
+    setBaziError(null);
+    
+    try {
+      const response = await fetch('/api/bazi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dateTime: data.dateTime,
+          gender: data.gender,
+          timezone: data.timezone,
+          year: 2026,
+          yearAnimal: 'Огненная Лошадь',
+          style: 'poetic'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Ошибка расчёта Бацзы');
+      }
+
+      setBaziAnalysis(result.analysis);
+      setBaziContent(result.content);
+    } catch (error) {
+      console.error('Ошибка расчёта Бацзы:', error);
+      setBaziError(error instanceof Error ? error.message : 'Неизвестная ошибка');
+    } finally {
+      setBaziLoading(false);
+    }
+  };
+
+  const handleSelectBaziElement = (element: BaziElement) => {
+    setBaziElement(element);
+    // Автоматически выбираем первый цвет из палитры элемента
+    const colors = ELEMENT_COLORS[element];
+    if (colors && colors.length > 0) {
+      setColor(colors[0].value);
+    }
+  };
+
   // Шаг 1: Элемент Бацзы (пока упрощённо - выбор вручную)
   const [baziElement, setBaziElement] = useState<BaziElement | null>(null);
   
@@ -76,6 +193,96 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
           创建护身符
         </h1>
         <p className="text-white/70 text-lg">Создайте свой амулет желания</p>
+      </div>
+
+      {/* ТЕСТ 1: Блок для незарегистрированных (показывает отказ) */}
+      <div className="bg-gradient-to-br from-gray-800/50 via-gray-700/30 to-gray-800/50 backdrop-blur-md border-2 border-gray-500/50 rounded-2xl p-6">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>🧪 ТЕСТ 1</span>
+          <span>Блок для незарегистрированных (показывает отказ)</span>
+        </h2>
+        <button
+          onClick={() => {
+            if (!isAuthenticated && !devMode) {
+              setShowAuthPrompt(true);
+              setUseBaziForecast(false);
+            }
+          }}
+          disabled={isCheckingAuth || isAuthenticated || devMode}
+          className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          🔮 Использовать прогноз Бацзы (八字)
+        </button>
+        {showAuthPrompt && !isAuthenticated && !devMode && !useBaziForecast && (
+          <div className="mt-4 p-4 bg-red-900/50 rounded-xl border-2 border-red-500/50">
+            <p className="text-white font-semibold mb-2">⚠️ Требуется регистрация</p>
+            <p className="text-white/80 text-sm mb-3">
+              Для использования калькулятора Бацзы необходимо войти в аккаунт или зарегистрироваться.
+            </p>
+            <div className="flex gap-3">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                Войти в аккаунт
+              </button>
+              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all">
+                Зарегистрироваться
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ТЕСТ 2: Блок для разработчика (работает с калькулятором) */}
+      <div className="bg-gradient-to-br from-yellow-900/50 via-orange-900/30 to-yellow-900/50 backdrop-blur-md border-2 border-yellow-500/50 rounded-2xl p-6">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>🔧 ТЕСТ 2 (DEV)</span>
+          <span>Блок для разработчика (работает с калькулятором)</span>
+        </h2>
+        <div className="flex items-center gap-4 mb-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={devMode}
+              onChange={(e) => {
+                setDevMode(e.target.checked);
+                if (e.target.checked) {
+                  setShowAuthPrompt(false);
+                }
+              }}
+              className="w-6 h-6 rounded border-2 border-white/30 bg-white/10 checked:bg-yellow-500 checked:border-yellow-400 focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-transparent transition-all"
+            />
+            <span className="text-white font-semibold">
+              🔓 Режим разработчика (обойти проверку авторизации)
+            </span>
+          </label>
+        </div>
+        <button
+          onClick={handleBaziForecastClick}
+          disabled={!devMode && !isAuthenticated}
+          className="w-full px-6 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-bold rounded-xl hover:from-yellow-700 hover:to-orange-700 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          🔮 Использовать прогноз Бацзы (八字)
+        </button>
+        {useBaziForecast && (isAuthenticated || devMode) && (
+          <div className="mt-4 space-y-4">
+            {!baziAnalysis ? (
+              <>
+                <BaziForm onSubmit={handleBaziSubmit} isLoading={baziLoading} />
+                {baziError && (
+                  <div className="p-4 bg-red-900/50 rounded-xl border-2 border-red-500/50">
+                    <p className="text-white font-semibold mb-2">❌ Ошибка</p>
+                    <p className="text-white/80 text-sm">{baziError}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <BaziResults 
+                analysis={baziAnalysis} 
+                content={baziContent}
+                onSelectElement={handleSelectBaziElement}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Шаг 1: Выбор элемента Бацзы */}

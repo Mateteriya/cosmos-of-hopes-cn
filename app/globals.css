@@ -42,3 +42,161 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Стили для react-timezone-select */
+.timezone-select-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.timezone-select .react-select__control {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(16px);
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1rem !important;
+  min-height: 3.5rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.timezone-select .react-select__control:hover {
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.timezone-select .react-select__control--is-focused {
+  border-color: rgba(168, 85, 247, 1) !important;
+  box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.3) !important;
+}
+
+.timezone-select .react-select__menu {
+  background-color: rgba(30, 30, 30, 0.95) !important;
+  backdrop-filter: blur(16px);
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3) !important;
+  z-index: 9999 !important;
+}
+
+.timezone-select .react-select__option {
+  background-color: transparent !important;
+  color: white !important;
+  padding: 0.75rem 1rem !important;
+  cursor: pointer !important;
+}
+
+.timezone-select .react-select__option--is-focused {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.timezone-select .react-select__option--is-selected {
+  background-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+.timezone-select .react-select__input {
+  color: white !important;
+}
+
+.timezone-select .react-select__single-value {
+  color: white !important;
+}
+
+.timezone-select .react-select__placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.timezone-select .react-select__indicator-separator {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.timezone-select .react-select__dropdown-indicator {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.timezone-select .react-select__dropdown-indicator:hover {
+  color: white !important;
+}
+
+/* Стили для Leaflet карты */
+.leaflet-container {
+  background-color: rgba(0, 0, 0, 0.5);
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: rgba(30, 30, 30, 0.95);
+  color: white;
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-tip {
+  background-color: rgba(30, 30, 30, 0.95);
+}
+
+.leaflet-control-zoom a {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Стилизация стандартной панели календаря браузера для datetime-local */
+input[type="datetime-local"] {
+  color-scheme: dark;
+  position: relative;
+  padding-right: 3.5rem !important;
+}
+
+/* Показываем стандартную иконку, но стилизуем её */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin: 0;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Для Firefox */
+input[type="datetime-local"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(1) brightness(0.8);
+  opacity: 0.8;
+}
+
+/* Стилизация панели календаря (только для WebKit браузеров) */
+input[type="datetime-local"]::-webkit-datetime-edit {
+  color: white;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  color: white;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-text {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field,
+input[type="datetime-local"]::-webkit-datetime-edit-minute-field {
+  color: white;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit-month-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-hour-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-minute-field:focus {
+  background-color: rgba(168, 85, 247, 0.3);
+  color: white;
+}
+
