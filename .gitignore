@@ -39,3 +39,7 @@ next-env.d.ts
 # БаЦЗЫ node_modules (локальные зависимости)
 БаЦЗЫ/node_modules/
 
+# Документация (не коммитим .md файлы)
+*.md
+!README.md
+

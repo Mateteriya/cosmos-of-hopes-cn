@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 /**
  * API маршрут для расчёта Бацзы
@@ -18,20 +21,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Импорт ES модулей через абсолютный путь с file:// протоколом
-    // Next.js не поддерживает динамические относительные пути с кириллицей
-    const path = await import('path');
-    const { pathToFileURL } = await import('url');
-    const baziPath = path.resolve(process.cwd(), 'БаЦЗЫ');
-    const calculatorPath = path.join(baziPath, 'bazi-calculator-expert.js');
-    const contentPath = path.join(baziPath, 'content-generator.js');
+    // Используем абсолютный путь от корня проекта
+    const baziPath = join(process.cwd(), 'БаЦЗЫ');
+    const calculatorPath = join(baziPath, 'bazi-calculator-expert.js');
+    const contentPath = join(baziPath, 'content-generator.js');
     
-    // Используем file:// протокол для корректного импорта
+    // Проверяем существование файлов
+    if (!existsSync(calculatorPath)) {
+      throw new Error(`Calculator file not found: ${calculatorPath}`);
+    }
+    if (!existsSync(contentPath)) {
+      throw new Error(`Content generator file not found: ${contentPath}`);
+    }
+    
+    // Используем pathToFileURL для корректного импорта ES модулей
+    // Это необходимо для путей с кириллицей в Next.js
     const calculatorUrl = pathToFileURL(calculatorPath).href;
     const contentUrl = pathToFileURL(contentPath).href;
     
-    const { getFullBaziAnalysis } = await import(calculatorUrl);
-    const { generateContent, formatContentForDisplay } = await import(contentUrl);
+    // Импортируем модули с кэшированием (добавляем timestamp для dev режима)
+    const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
+    
+    const calculatorModule = await import(calculatorUrl + cacheBuster);
+    const contentModule = await import(contentUrl + cacheBuster);
+    
+    const { getFullBaziAnalysis } = calculatorModule;
+    const { generateContent, formatContentForDisplay } = contentModule;
     
     // Получаем анализ Бацзы
     const baziAnalysis = getFullBaziAnalysis(dateTime, gender, timezone);
@@ -48,10 +63,25 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Bazi calculation error:', error);
+    
+    // Детальная информация об ошибке для отладки
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error', success: false },
+      { 
+        error: error instanceof Error ? error.message : 'Unknown error', 
+        success: false,
+        details: process.env.NODE_ENV === 'development' 
+          ? {
+              message: error instanceof Error ? error.message : String(error),
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          : undefined
+      },
       { status: 500 }
     );
   }
 }
-
