@@ -31,6 +31,7 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
   const [baziLoading, setBaziLoading] = useState(false);
   const [baziAnalysis, setBaziAnalysis] = useState<any>(null);
   const [baziContent, setBaziContent] = useState<any>(null);
+  const [baziFormData, setBaziFormData] = useState<{ dateTime: string; gender: 'male' | 'female'; timezone: string } | null>(null);
   const [baziError, setBaziError] = useState<string | null>(null);
 
   // Отладка: логируем изменения состояний
@@ -89,7 +90,7 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
     }
   };
 
-  const handleBaziSubmit = async (data: { dateTime: string; gender: 'male' | 'female'; timezone: string }) => {
+  const calculateBazi = async (data: { dateTime: string; gender: 'male' | 'female'; timezone: string }, style: 'poetic' | 'practical' = 'poetic') => {
     setBaziLoading(true);
     setBaziError(null);
     
@@ -103,7 +104,7 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
           timezone: data.timezone,
           year: 2026,
           yearAnimal: 'Огненная Лошадь',
-          style: 'poetic'
+          style: style
         })
       });
 
@@ -120,6 +121,18 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
       setBaziError(error instanceof Error ? error.message : 'Неизвестная ошибка');
     } finally {
       setBaziLoading(false);
+    }
+  };
+
+  const handleBaziSubmit = async (data: { dateTime: string; gender: 'male' | 'female'; timezone: string }) => {
+    // Сохраняем данные формы для возможного пересчёта
+    setBaziFormData(data);
+    await calculateBazi(data, 'poetic');
+  };
+
+  const handleStyleChange = async (newStyle: 'poetic' | 'practical') => {
+    if (baziFormData) {
+      await calculateBazi(baziFormData, newStyle);
     }
   };
 
@@ -279,6 +292,8 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
                 analysis={baziAnalysis} 
                 content={baziContent}
                 onSelectElement={handleSelectBaziElement}
+                onStyleChange={handleStyleChange}
+                isLoading={baziLoading}
               />
             )}
           </div>
