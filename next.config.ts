@@ -25,6 +25,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  
+  // Настройки для поддержки динамических импортов ES модулей
+  experimental: {
+    serverComponentsExternalPackages: ['lunisolar', 'moment-timezone'],
+  },
+  
+  // Разрешаем импорт из папки БаЦЗЫ
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Для серверной стороны разрешаем внешние модули
+      config.externals = config.externals || [];
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

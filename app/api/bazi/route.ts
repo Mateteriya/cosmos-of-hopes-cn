@@ -1,12 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 
 /**
  * API маршрут для расчёта Бацзы
  * Использует готовый калькулятор из папки БаЦЗЫ
  */
+
+// Кэш для модулей (чтобы не импортировать каждый раз)
+let calculatorModuleCache: any = null;
+let contentModuleCache: any = null;
+
+async function loadModules() {
+  // Если модули уже загружены, возвращаем их
+  if (calculatorModuleCache && contentModuleCache) {
+    return { calculatorModuleCache, contentModuleCache };
+  }
+
+  // Используем абсолютный путь от корня проекта
+  const baziPath = resolve(process.cwd(), 'БаЦЗЫ');
+  const calculatorPath = resolve(baziPath, 'bazi-calculator-expert.js');
+  const contentPath = resolve(baziPath, 'content-generator.js');
+  
+  // Проверяем существование файлов
+  if (!existsSync(calculatorPath)) {
+    throw new Error(`Calculator file not found: ${calculatorPath}. Current working directory: ${process.cwd()}`);
+  }
+  if (!existsSync(contentPath)) {
+    throw new Error(`Content generator file not found: ${contentPath}`);
+  }
+  
+  try {
+    // Используем pathToFileURL для корректного импорта ES модулей
+    // Это необходимо для путей с кириллицей в Next.js
+    const calculatorUrl = pathToFileURL(calculatorPath).href;
+    const contentUrl = pathToFileURL(contentPath).href;
+    
+    // Импортируем модули
+    calculatorModuleCache = await import(calculatorUrl);
+    contentModuleCache = await import(contentUrl);
+    
+    return { calculatorModuleCache, contentModuleCache };
+  } catch (importError: any) {
+    console.error('Module import error:', {
+      message: importError.message,
+      code: importError.code,
+      calculatorPath,
+      contentPath,
+      calculatorUrl: pathToFileURL(calculatorPath).href,
+      contentUrl: pathToFileURL(contentPath).href,
+      cwd: process.cwd()
+    });
+    throw new Error(`Failed to import modules: ${importError.message}`);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,32 +69,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Используем абсолютный путь от корня проекта
-    const baziPath = join(process.cwd(), 'БаЦЗЫ');
-    const calculatorPath = join(baziPath, 'bazi-calculator-expert.js');
-    const contentPath = join(baziPath, 'content-generator.js');
+    // Загружаем модули
+    const { calculatorModuleCache, contentModuleCache } = await loadModules();
     
-    // Проверяем существование файлов
-    if (!existsSync(calculatorPath)) {
-      throw new Error(`Calculator file not found: ${calculatorPath}`);
-    }
-    if (!existsSync(contentPath)) {
-      throw new Error(`Content generator file not found: ${contentPath}`);
-    }
-    
-    // Используем pathToFileURL для корректного импорта ES модулей
-    // Это необходимо для путей с кириллицей в Next.js
-    const calculatorUrl = pathToFileURL(calculatorPath).href;
-    const contentUrl = pathToFileURL(contentPath).href;
-    
-    // Импортируем модули с кэшированием (добавляем timestamp для dev режима)
-    const cacheBuster = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
-    
-    const calculatorModule = await import(calculatorUrl + cacheBuster);
-    const contentModule = await import(contentUrl + cacheBuster);
-    
-    const { getFullBaziAnalysis } = calculatorModule;
-    const { generateContent, formatContentForDisplay } = contentModule;
+    const { getFullBaziAnalysis } = calculatorModuleCache;
+    const { generateContent, formatContentForDisplay } = contentModuleCache;
     
     // Получаем анализ Бацзы
     const baziAnalysis = getFullBaziAnalysis(dateTime, gender, timezone);
@@ -77,7 +104,8 @@ export async function POST(request: NextRequest) {
         details: process.env.NODE_ENV === 'development' 
           ? {
               message: error instanceof Error ? error.message : String(error),
-              stack: error instanceof Error ? error.stack : undefined
+              stack: error instanceof Error ? error.stack : undefined,
+              cwd: process.cwd()
             }
           : undefined
       },
