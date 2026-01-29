@@ -4,6 +4,115 @@
 
 export type QuestProgramMode = 'bazi' | 'name' | 'template' | 'combined';
 
+export type LocaleCode = 'en' | 'ru' | 'zh';
+
+export type TranslationMap<T> = Partial<Record<LocaleCode, T>>;
+
+export interface QuestMonthProgramText {
+  title?: string;
+  theme?: string;
+  intent?: string;
+  focusAreas?: string[];
+}
+
+export interface QuestNarrativeText {
+  role?: string;
+  archetype?: string;
+  heroRole?: string;
+  opening?: string;
+  closing?: string;
+}
+
+export interface QuestProgramSourceText {
+  notes?: string;
+  combinedInsights?: string[];
+}
+
+export interface QuestBaziSourceText {
+  year?: string;
+  elementFocus?: string;
+  chartSummary?: string;
+  recommendations?: string[];
+  warning?: string;
+}
+
+export interface QuestNumerologySourceText {
+  nameNumberLabel?: string;
+  lifePathNumberLabel?: string;
+  themes?: string[];
+  recommendations?: string[];
+  notes?: string;
+}
+
+export interface QuestTaskText {
+  title?: string;
+  summary?: string;
+  instructions?: string[];
+  completionCriteria?: string;
+  safetyNotes?: string[];
+}
+
+export interface QuestWeekPlanText {
+  title?: string;
+  focus?: string;
+}
+
+export interface QuestRitualText {
+  title?: string;
+  steps?: string[];
+}
+
+export interface QuestCheckpointText {
+  label?: string;
+  prompts?: string[];
+}
+
+export interface QuestChecklistItemText {
+  label?: string;
+  description?: string;
+}
+
+export interface QuestCheckInQuestionText {
+  prompt?: string;
+  options?: string[];
+  relatedFocus?: string;
+}
+
+export interface QuestMetricText {
+  label?: string;
+  unit?: string;
+}
+
+export interface QuestMonthCheckInText {
+  reflectionPrompts?: string[];
+}
+
+export interface QuestMonthOutcomeText {
+  summary?: string;
+  achievements?: string[];
+  artifacts?: string[];
+}
+
+export interface QuestMapUnlockText {
+  title?: string;
+  condition?: string;
+}
+
+export interface QuestMonthConstraintsText {
+  skipPolicy?: string;
+  repeatPolicy?: string;
+}
+
+export interface QuestPersonalWishText {
+  title?: string;
+  description?: string;
+  motivation?: string;
+  alignment?: string;
+  monthlyStep?: string;
+  milestones?: string[];
+  safetyNotes?: string[];
+}
+
 export type QuestTaskKind = 'mission' | 'habit' | 'ritual' | 'reflection' | 'challenge' | 'support';
 
 export type QuestCadence = 'daily' | 'weekly' | 'biweekly' | 'one_time' | 'monthly';
@@ -14,16 +123,41 @@ export type QuestQuestionType = 'scale' | 'single_choice' | 'multi_choice' | 'te
 
 export type QuestAnswer = string | number | boolean | string[];
 
+export interface QuestBaziSource {
+  year: string;
+  elementFocus?: string;
+  chartSummary?: string;
+  recommendations?: string[];
+  warning?: string;
+  translations?: TranslationMap<QuestBaziSourceText>;
+}
+
+export interface QuestNumerologySource {
+  nameNumber?: number;
+  lifePathNumber?: number;
+  themes?: string[];
+  recommendations?: string[];
+  notes?: string;
+  translations?: TranslationMap<QuestNumerologySourceText>;
+}
+
 export interface QuestProgramSource {
   mode: QuestProgramMode;
   signals: string[];
   notes?: string;
+  combinedInsights?: string[];
+  bazi?: QuestBaziSource;
+  numerology?: QuestNumerologySource;
+  translations?: TranslationMap<QuestProgramSourceText>;
 }
 
 export interface QuestNarrative {
   role: string;
+  archetype: string;
+  heroRole: string;
   opening: string;
   closing: string;
+  translations?: TranslationMap<QuestNarrativeText>;
 }
 
 export interface QuestMonthConstraints {
@@ -32,6 +166,7 @@ export interface QuestMonthConstraints {
   allowSkip: boolean;
   skipPolicy?: string;
   repeatPolicy?: string;
+  translations?: TranslationMap<QuestMonthConstraintsText>;
 }
 
 export interface QuestTask {
@@ -48,6 +183,7 @@ export interface QuestTask {
   tags?: string[];
   relatedSkills?: string[];
   safetyNotes?: string[];
+  translations?: TranslationMap<QuestTaskText>;
 }
 
 export interface QuestWeekPlan {
@@ -55,6 +191,7 @@ export interface QuestWeekPlan {
   title: string;
   focus: string;
   taskIds: string[];
+  translations?: TranslationMap<QuestWeekPlanText>;
 }
 
 export interface QuestRitual {
@@ -63,6 +200,7 @@ export interface QuestRitual {
   cadence: QuestCadence;
   steps: string[];
   taskIds?: string[];
+  translations?: TranslationMap<QuestRitualText>;
 }
 
 export interface QuestMonthSchedule {
@@ -76,6 +214,7 @@ export interface QuestCheckpoint {
   dayOfMonth: number;
   prompts: string[];
   required: boolean;
+  translations?: TranslationMap<QuestCheckpointText>;
 }
 
 export interface QuestChecklistItem {
@@ -83,6 +222,7 @@ export interface QuestChecklistItem {
   label: string;
   description?: string;
   relatedTaskIds?: string[];
+  translations?: TranslationMap<QuestChecklistItemText>;
 }
 
 export interface QuestCheckInQuestion {
@@ -94,6 +234,7 @@ export interface QuestCheckInQuestion {
   scaleMin?: number;
   scaleMax?: number;
   relatedFocus?: string;
+  translations?: TranslationMap<QuestCheckInQuestionText>;
 }
 
 export interface QuestMetric {
@@ -104,6 +245,7 @@ export interface QuestMetric {
   min?: number;
   max?: number;
   relatedTaskIds?: string[];
+  translations?: TranslationMap<QuestMetricText>;
 }
 
 export interface QuestMonthCheckIn {
@@ -111,6 +253,7 @@ export interface QuestMonthCheckIn {
   questions: QuestCheckInQuestion[];
   metrics: QuestMetric[];
   reflectionPrompts: string[];
+  translations?: TranslationMap<QuestMonthCheckInText>;
 }
 
 export interface QuestMapUnlock {
@@ -118,11 +261,24 @@ export interface QuestMapUnlock {
   title: string;
   condition: string;
   when: 'mid_month' | 'end_month';
+  translations?: TranslationMap<QuestMapUnlockText>;
 }
 
 export interface QuestMapProgression {
   visualTheme?: string;
   buildingUnlocks: QuestMapUnlock[];
+}
+
+export interface QuestPersonalWish {
+  title: string;
+  description: string;
+  motivation: string;
+  alignment: string;
+  monthlyStep: string;
+  milestones?: string[];
+  supportTaskIds?: string[];
+  safetyNotes?: string[];
+  translations?: TranslationMap<QuestPersonalWishText>;
 }
 
 export interface QuestNextMonthGate {
@@ -136,6 +292,7 @@ export interface QuestMonthOutcome {
   achievements: string[];
   artifacts: string[];
   nextMonthGate: QuestNextMonthGate;
+  translations?: TranslationMap<QuestMonthOutcomeText>;
 }
 
 export interface QuestMonthProgram {
@@ -146,6 +303,7 @@ export interface QuestMonthProgram {
   theme: string;
   intent: string;
   focusAreas: string[];
+  translations?: TranslationMap<QuestMonthProgramText>;
   narrative: QuestNarrative;
   source: QuestProgramSource;
   constraints: QuestMonthConstraints;
@@ -155,6 +313,7 @@ export interface QuestMonthProgram {
   endCheckIn: QuestMonthCheckIn;
   outcome: QuestMonthOutcome;
   mapProgress: QuestMapProgression;
+  personalWish?: QuestPersonalWish;
 }
 
 export interface QuestMonthCompletionReport {
