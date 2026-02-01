@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Визуализация амулетов - Демо</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0a1a 0%, #2d1b2d 50%, #1a0a1a 100%);
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .variant-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .variant-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .demo-area {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1 / 1;
+            background: #000000;
+            border-radius: 20px;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .horse-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1.5s ease;
+        }
+
+        .horse-video.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .horse-video.paused {
+            opacity: 0.95;
+        }
+
+        .horse-video.fade-out {
+            opacity: 0;
+            transition: opacity 1.5s ease;
+        }
+
+        .horse-video.fade-in {
+            opacity: 1;
+            transition: opacity 1.5s ease;
+        }
+
+        .horse-image {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 102;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease, transform 1.5s ease, width 1.5s ease, height 1.5s ease;
+        }
+
+        .horse-image.visible {
+            opacity: 1;
+        }
+
+        .horse-image.small {
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border-color: transparent;
+        }
+
+        .description {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+
+        /* ========== ОБЪЕДИНЕННАЯ СЦЕНА ========== */
+        .unified-scene {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            /* Простой черный фон */
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(26, 26, 46, 0.95) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(15, 15, 30, 0.95) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 50%, rgba(77, 171, 247, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
+            overflow: hidden;
+            /* Фон скрыт пока видео играет */
+            z-index: 1;
+            opacity: 0;
+            transition: z-index 0s, opacity 1.2s ease-in;
+        }
+        
+        .unified-scene.showing {
+            /* При остановке видео фон плавно покрывает его */
+            z-index: 101;
+            opacity: 1;
+        }
+
+        /* Фоновые звезды */
+        .star-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                /* Обычные белые звезды */
+                radial-gradient(1.5px 1.5px at 10% 20%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 25% 40%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(2px 2px at 40% 10%, rgba(255, 255, 255, 1), transparent),
+                radial-gradient(1px 1px at 55% 60%, rgba(255, 255, 255, 0.8), transparent),
+                radial-gradient(1.5px 1.5px at 70% 30%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 85% 80%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(2px 2px at 15% 70%, rgba(255, 255, 255, 1), transparent),
+                radial-gradient(1px 1px at 30% 90%, rgba(255, 255, 255, 0.8), transparent),
+                radial-gradient(1.5px 1.5px at 60% 15%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 75% 50%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(2px 2px at 90% 25%, rgba(255, 255, 255, 1), transparent),
+                radial-gradient(1px 1px at 5% 55%, rgba(255, 255, 255, 0.8), transparent),
+                radial-gradient(1.5px 1.5px at 45% 85%, rgba(255, 255, 255, 0.9), transparent),
+                radial-gradient(1px 1px at 65% 5%, rgba(255, 255, 255, 0.7), transparent),
+                radial-gradient(2px 2px at 95% 65%, rgba(255, 255, 255, 1), transparent);
+            background-size: 120% 120%;
+            background-position: 0% 0%, 10% 10%, 20% 20%, 30% 30%, 40% 40%, 50% 50%, 60% 60%, 70% 70%, 80% 80%, 90% 90%, 5% 95%, 15% 5%, 25% 25%, 35% 35%, 45% 45%;
+            animation: starMove 30s linear infinite;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        @keyframes starMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-150px, -150px); }
+        }
+
+        /* Амулеты-звезды */
+        .star-amulet {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.4s ease, filter 0.4s ease;
+            will-change: transform, opacity, filter;
+            z-index: 5;
+        }
+
+        .star-amulet:hover {
+            transform: scale(1.4) !important;
+            filter: brightness(1.6);
+            z-index: 15;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { 
+                opacity: 0.9;
+                filter: brightness(1);
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1;
+                filter: brightness(1.5);
+                transform: scale(1.2);
+            }
+        }
+
+        .star-amulet.fire { 
+            background: radial-gradient(circle, #ff6b6b 0%, #dc2626 100%);
+            color: #ff6b6b;
+        }
+        .star-amulet.wood { 
+            background: radial-gradient(circle, #51cf66 0%, #16a34a 100%);
+            color: #51cf66;
+        }
+        .star-amulet.water { 
+            background: radial-gradient(circle, #4dabf7 0%, #2563eb 100%);
+            color: #4dabf7;
+        }
+        .star-amulet.earth { 
+            background: radial-gradient(circle, #ffd43b 0%, #ca8a04 100%);
+            color: #ffd43b;
+        }
+        .star-amulet.metal { 
+            background: radial-gradient(circle, #adb5bd 0%, #64748b 100%);
+            color: #adb5bd;
+        }
+
+        .star-amulet::before {
+            content: '🪙';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+        }
+
+        @keyframes symbolPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Соединительные линии между звездами */
+        .constellation-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent 0%,
+                rgba(255, 255, 255, 0.4) 10%,
+                rgba(255, 255, 255, 0.6) 25%,
+                rgba(255, 255, 255, 0.7) 50%,
+                rgba(255, 255, 255, 0.6) 75%,
+                rgba(255, 255, 255, 0.4) 90%,
+                transparent 100%);
+            pointer-events: none;
+            z-index: 2;
+            animation: lineGlow 4s ease-in-out infinite;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.9; }
+        }
+
+
+        /* Цветные 3D-шары, летающие вместе с амулетами */
+        .colored-3d-ball {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            margin-left: -40px;
+            margin-top: -40px;
+            border-radius: 50%;
+            transform-origin: center center;
+            background: 
+                radial-gradient(circle at 25% 25%, 
+                    rgba(255, 255, 255, 0.95) 0%,
+                    var(--ball-gradient, rgba(255, 200, 87, 0.85)) 100%);
+            box-shadow: 
+                0 15px 40px rgba(0, 0, 0, 0.5),
+                0 8px 20px rgba(0, 0, 0, 0.4),
+                inset -10px -10px 25px rgba(0, 0, 0, 0.4),
+                inset 10px 10px 25px rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            z-index: 10;
+            will-change: transform;
+        }
+
+        /* 3D круг с сильным эффектом выпуклости (БЕЗ дымки) */
+        .wish-orb-3d-circle {
+            position: absolute;
+            top: 50%;
+            left: 55%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%) perspective(600px) rotateX(20deg) rotateY(-10deg) scale(0.1);
+            transform-origin: center center;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 25% 25%, 
+                    rgb(255, 255, 255) 0%,
+                    rgb(255, 240, 200) 8%,
+                    rgb(255, 200, 87) 15%,
+                    rgb(255, 180, 60) 25%,
+                    rgb(255, 150, 50) 40%,
+                    rgb(220, 120, 40) 60%,
+                    rgb(180, 90, 30) 80%,
+                    rgb(150, 70, 20) 100%);
+            box-shadow: 
+                /* Внутренние тени для выпуклости (увеличены в 3 раза) */
+                inset -45px -45px 90px rgba(0, 0, 0, 0.5),
+                inset -24px -24px 60px rgba(0, 0, 0, 0.4),
+                /* Внутренние блики (увеличены в 3 раза) */
+                inset 45px 45px 105px rgba(255, 255, 255, 0.6),
+                inset 24px 24px 60px rgba(255, 255, 255, 0.5),
+                inset 9px 9px 30px rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            border: 9px solid rgba(255, 200, 87, 0.3);
+            z-index: 15;
+            opacity: 0;
+            transition: width 20s ease, height 20s ease, left 20s ease, transform 20s ease, opacity 2s ease;
+        }
+
+        .wish-orb-3d-circle.growing {
+            width: 360px;
+            height: 360px;
+            left: 50%;
+            transform: translate(-50%, -50%) perspective(600px) rotateX(20deg) rotateY(-10deg) scale(1);
+            opacity: 1;
+            animation: circle3DRotate 8s ease-in-out infinite;
+        }
+
+        @keyframes circle3DRotate {
+            0%, 100% { 
+                transform: translate(-50%, -50%) perspective(600px) rotateX(20deg) rotateY(-10deg) rotateZ(0deg);
+            }
+            25% { 
+                transform: translate(-50%, -50%) perspective(600px) rotateX(25deg) rotateY(10deg) rotateZ(5deg);
+            }
+            50% { 
+                transform: translate(-50%, -50%) perspective(600px) rotateX(20deg) rotateY(-10deg) rotateZ(0deg);
+            }
+            75% { 
+                transform: translate(-50%, -50%) perspective(600px) rotateX(15deg) rotateY(-20deg) rotateZ(-5deg);
+            }
+        }
+
+        /* Изображение иероглифа внутри 3D круга */
+        .wish-orb-image {
+            width: 75%;
+            height: 75%;
+            object-fit: contain;
+            animation: imageGlow 3s ease-in-out infinite;
+            z-index: 10;
+            position: relative;
+            display: block;
+        }
+
+        @keyframes imageGlow {
+            0%, 100% { 
+                opacity: 0.95;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Анимация полета звезд - управляется через JavaScript */
+        .unified-scene.collecting .star-amulet {
+            will-change: transform, opacity;
+            transition: none; /* Отключаем CSS transitions для ручного управления */
+        }
+
+        .unified-scene.collecting .constellation-line {
+            animation: lineFade 1s ease-out forwards;
+        }
+
+
+        @keyframes lineFade {
+            0% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 Визуализация амулетов</h1>
+        <p class="subtitle">Звездное небо</p>
+
+        <div class="variant-card">
+            <div class="variant-title">
+                <span>⭐🌀</span>
+                <span>Звездное небо</span>
+            </div>
+            <div class="main-content-wrapper">
+                <div class="demo-area">
+                    <video id="horseVideo" class="horse-video" preload="none" muted playsinline>
+                        <source src="/video/лошадь..mp4" type="video/mp4">
+                        <source src="./video/лошадь..mp4" type="video/mp4">
+                    </video>
+                    <img id="horseImage" class="horse-image" src="/video/лошадь огненная3.png" alt="Огненная лошадь" onerror="this.src='./video/лошадь огненная3.png'">
+                    <div class="unified-scene" id="unifiedScene">
+                        <div class="star-background"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="initStarSky()">🔄 Инициализировать</button>
+                <button class="btn" onclick="testCollectionAnimation()">🎬 Тест анимации (29 января)</button>
+            </div>
+            <div class="description">
+                Начальное состояние: амулеты как звезды на небе, формирующие созвездия с соединительными линиями. 
+                29 января звезды собираются в центр и трансформируются в мандалу элементов с амулетами на орбитах.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const elements = ['fire', 'wood', 'water', 'earth', 'metal'];
+        const elementColors = {
+            fire: '#ff6b6b',
+            wood: '#51cf66',
+            water: '#4dabf7',
+            earth: '#ffd43b',
+            metal: '#adb5bd'
+        };
+
+        let starAmulets = [];
+
+        // ========== ИНИЦИАЛИЗАЦИЯ ЗВЕЗДНОГО НЕБА ==========
+        function initStarSky() {
+            const scene = document.getElementById('unifiedScene');
+            if (!scene) return;
+            
+            scene.classList.remove('collecting');
+            
+            // Останавливаем предыдущую анимацию, если она была
+            if (collectionAnimationFrame) {
+                cancelAnimationFrame(collectionAnimationFrame);
+                collectionAnimationFrame = null;
+            }
+            
+            
+            // Удаляем старые элементы (НО НЕ картинку лошади!)
+            const oldStars = scene.querySelectorAll('.star-amulet');
+            const oldLines = scene.querySelectorAll('.constellation-line');
+            const oldBalls = scene.querySelectorAll('.colored-3d-ball');
+            const oldOrb = scene.querySelector('.center-wish-orb');
+            const oldCircle = scene.querySelector('.wish-orb-3d-circle');
+            
+            // Удаляем все старые элементы (кроме картинки лошади)
+            oldStars.forEach(s => s.remove());
+            oldLines.forEach(l => l.remove());
+            oldBalls.forEach(b => b.remove());
+            if (oldOrb) oldOrb.remove();
+            // НЕ удаляем oldCircle, если он уже растет (имеет класс growing)
+            if (oldCircle && !oldCircle.classList.contains('growing')) {
+                oldCircle.remove();
+            }
+
+            starAmulets = [];
+            
+            // Убеждаемся, что конфигурация инициализирована
+            if (!animationConfig.elements) animationConfig.elements = {};
+            if (!animationConfig.elements.amulets) animationConfig.elements.amulets = { count: 30 };
+            if (!animationConfig.elements.coloredBalls) animationConfig.elements.coloredBalls = { count: 5 };
+            if (!animationConfig.connections) animationConfig.connections = { enabled: true, maxDistance: 150 };
+            
+            const amuletCount = animationConfig.elements.amulets.count || 30;
+
+            // Создаем амулеты-звезды с предотвращением перекрытия
+            function isPositionFree(x, y, existingAmulets, minDistance = 6) {
+                for (const starData of existingAmulets) {
+                    // Используем сохраненные координаты из объекта
+                    const ax = starData.x;
+                    const ay = starData.y;
+                    const distance = Math.sqrt(Math.pow(x - ax, 2) + Math.pow(y - ay, 2));
+                    if (distance < minDistance) return false;
+                }
+                return true;
+            }
+
+            // Равномерно распределяем элементы
+            const elementCounts = {
+                fire: 0,
+                wood: 0,
+                water: 0,
+                earth: 0,
+                metal: 0
+            };
+            
+            // Константы для исключения центра
+            const centerX = 50;
+            const centerY = 50;
+            const centerRadius = 3; // Радиус исключения в процентах (уменьшен для большего пространства)
+            
+            for (let i = 0; i < amuletCount; i++) {
+                let attempts = 0;
+                let x, y, distanceFromCenter;
+                do {
+                    x = Math.random() * 85 + 7.5;
+                    y = Math.random() * 85 + 7.5;
+                    // Исключаем центр экрана (50% ± 5%) - чтобы амулеты не появлялись в центре
+                    distanceFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                    attempts++;
+                } while ((!isPositionFree(x, y, starAmulets) || distanceFromCenter < centerRadius) && attempts < 200);
+
+                // Если не удалось найти свободную позицию вне центра, пропускаем
+                if (attempts >= 200 || distanceFromCenter < centerRadius) {
+                    continue;
+                }
+
+                // Равномерное распределение элементов
+                const elementIndex = i % elements.length;
+                const element = elements[elementIndex];
+                elementCounts[element]++;
+                
+                const amulet = createStarAmulet(element);
+                amulet.style.left = `${x}%`;
+                amulet.style.top = `${y}%`;
+                amulet.style.animationDelay = `${Math.random() * 4}s`;
+                scene.appendChild(amulet);
+                starAmulets.push({ amulet, x, y, element });
+            }
+
+            // Создаем соединительные линии между близкими звездами
+            setTimeout(() => {
+                if (!animationConfig?.connections?.enabled) return;
+                
+                const sceneRect = scene.getBoundingClientRect();
+                const maxDistance = animationConfig?.connections?.maxDistance || 150;
+                
+                for (let i = 0; i < starAmulets.length; i++) {
+                    let hasConnection = false;
+                    for (let j = i + 1; j < starAmulets.length; j++) {
+                        // Используем проценты для расчета расстояния
+                        const dx = starAmulets[i].x - starAmulets[j].x;
+                        const dy = starAmulets[i].y - starAmulets[j].y;
+                        const distancePercent = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // Конвертируем в пиксели для проверки
+                        const distancePx = (distancePercent / 100) * Math.min(sceneRect.width, sceneRect.height);
+                        
+                        if (distancePx < maxDistance && distancePx > 30) {
+                            const line = document.createElement('div');
+                            line.className = 'constellation-line';
+                            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                            line.style.width = `${distancePx}px`;
+                            line.style.left = `${starAmulets[i].x}%`;
+                            line.style.top = `${starAmulets[i].y}%`;
+                            line.style.transform = `rotate(${angle}deg)`;
+                            line.style.transformOrigin = '0 0';
+                            line.style.animationDelay = `${Math.random() * 2}s`;
+                            scene.appendChild(line);
+                            hasConnection = true;
+                        }
+                    }
+                    // Если у звезды нет соединений, создаем хотя бы одно с ближайшей
+                    if (!hasConnection && i < starAmulets.length - 1) {
+                        let minDist = Infinity;
+                        let nearestIndex = i + 1;
+                        for (let j = i + 1; j < starAmulets.length; j++) {
+                            const dx = starAmulets[i].x - starAmulets[j].x;
+                            const dy = starAmulets[i].y - starAmulets[j].y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < minDist) {
+                                minDist = dist;
+                                nearestIndex = j;
+                            }
+                        }
+                        if (minDist < 50) {
+                            const sceneRect = scene.getBoundingClientRect();
+                            const dx = starAmulets[i].x - starAmulets[nearestIndex].x;
+                            const dy = starAmulets[i].y - starAmulets[nearestIndex].y;
+                            const distancePercent = Math.sqrt(dx * dx + dy * dy);
+                            const distancePx = (distancePercent / 100) * Math.min(sceneRect.width, sceneRect.height);
+                            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                            
+                            const line = document.createElement('div');
+                            line.className = 'constellation-line';
+                            line.style.width = `${distancePx}px`;
+                            line.style.left = `${starAmulets[i].x}%`;
+                            line.style.top = `${starAmulets[i].y}%`;
+                            line.style.transform = `rotate(${angle}deg)`;
+                            line.style.transformOrigin = '0 0';
+                            scene.appendChild(line);
+                        }
+                    }
+                }
+            }, 200);
+        }
+
+        function createStarAmulet(element) {
+            const amulet = document.createElement('div');
+            amulet.className = `star-amulet ${element}`;
+            return amulet;
+        }
+
+        // ========== ВОСПРОИЗВЕДЕНИЕ ВИДЕО С ЛОШАДЬЮ ==========
+        function playHorseVideo(callback) {
+            const horseVideo = document.getElementById('horseVideo');
+            
+            if (!horseVideo) {
+                // Если видео не найдено, сразу запускаем анимацию
+                if (callback) callback();
+                return;
+            }
+            
+            let callbackCalled = false;
+            const safeCallback = () => {
+                if (!callbackCalled && callback) {
+                    callbackCalled = true;
+                    callback();
+                }
+            };
+            
+            const scene = document.getElementById('unifiedScene');
+            
+            // Таймаут на случай, если видео зависнет (максимум 30 секунд)
+            const timeoutId = setTimeout(() => {
+                console.warn('Таймаут ожидания видео, запускаем анимацию');
+                if (scene) {
+                    scene.classList.add('showing');
+                }
+                horseVideo.classList.remove('visible', 'paused', 'fade-out', 'fade-in');
+                safeCallback();
+            }, 30000);
+            
+            // Обработка ошибки загрузки видео
+            const handleError = () => {
+                clearTimeout(timeoutId);
+                console.error('Ошибка загрузки или воспроизведения видео');
+                if (scene) {
+                    scene.classList.add('showing');
+                }
+                horseVideo.classList.remove('visible', 'paused', 'fade-out', 'fade-in');
+                safeCallback();
+            };
+            
+            horseVideo.onerror = handleError;
+            
+            // Обработчик окончания видео
+            horseVideo.onended = () => {
+                clearTimeout(timeoutId);
+                
+                const horseImage = document.getElementById('horseImage');
+                
+                // Плавный переход: сначала останавливаем видео
+                horseVideo.classList.add('paused');
+                
+                // Скрываем видео
+                setTimeout(() => {
+                    horseVideo.classList.remove('visible', 'paused', 'fade-out', 'fade-in');
+                    
+                    // Показываем картинку лошади
+                    if (horseImage) {
+                        horseImage.classList.add('visible');
+                        
+                        // Через 1.5 секунды уменьшаем картинку в центре
+                        setTimeout(() => {
+                            horseImage.classList.add('small');
+                            
+                            // После уменьшения показываем небо и запускаем анимацию
+                            setTimeout(() => {
+                                if (scene && horseImage) {
+                                    // Перемещаем картинку в сцену (остается в центре, уменьшенная)
+                                    scene.appendChild(horseImage);
+                                    // Устанавливаем z-index выше шара, чтобы картинка встала на шар
+                                    horseImage.style.zIndex = '20';
+                                    
+                                    // Показываем звездное небо с амулетами
+                                    scene.classList.add('showing');
+                                    
+                                    // Запускаем анимацию (3D-шар начнет расти и центрироваться)
+                                    setTimeout(() => {
+                                        safeCallback();
+                                    }, 500);
+                                } else {
+                                    safeCallback();
+                                }
+                            }, 1600);
+                        }, 1500);
+                    } else {
+                        // Если картинка не найдена, просто показываем небо
+                        if (scene) {
+                            scene.classList.add('showing');
+                        }
+                        setTimeout(() => {
+                            safeCallback();
+                        }, 500);
+                    }
+                }, 500);
+            };
+            
+            // Загружаем видео
+            try {
+                horseVideo.load();
+                
+                // Показываем видео
+                horseVideo.classList.add('visible');
+                
+                // Пытаемся воспроизвести видео после небольшой задержки
+                setTimeout(() => {
+                    horseVideo.play().catch(err => {
+                        console.error('Ошибка воспроизведения видео:', err);
+                        handleError();
+                    });
+                }, 100);
+            } catch (err) {
+                console.error('Ошибка при работе с видео:', err);
+                handleError();
+            }
+        }
+
+        // ========== АНИМАЦИЯ СБОРА В МАНДАЛУ ==========
+        function testCollectionAnimation() {
+            const scene = document.getElementById('unifiedScene');
+            if (!scene) return;
+            
+            // Если амулеты не созданы, создаем их сначала
+            if (!starAmulets || starAmulets.length === 0) {
+                initStarSky();
+                // Ждем немного, чтобы амулеты создались
+                setTimeout(() => {
+                    testCollectionAnimation();
+                }, 500);
+                return;
+            }
+            
+            // Сначала показываем видео с лошадью, затем запускаем анимацию
+            playHorseVideo(() => {
+                startCollectionAnimation();
+            });
+        }
+        
+        function startCollectionAnimation() {
+            const scene = document.getElementById('unifiedScene');
+            if (!scene) return;
+            
+            // Проверяем, что амулеты существуют в DOM
+            const existingAmulets = starAmulets.filter(star => {
+                if (!star || !star.amulet) return false;
+                return document.body.contains(star.amulet) || scene.contains(star.amulet);
+            });
+            
+            if (existingAmulets.length === 0) {
+                // Если амулетов нет, создаем их и запускаем анимацию заново
+                initStarSky();
+                setTimeout(() => {
+                    startCollectionAnimation();
+                }, 500);
+                return;
+            }
+            
+            // УДАЛЯЕМ ВСЕ элементы мандалы ПЕРЕД началом анимации (на всякий случай)
+            
+            const sceneRect = scene.getBoundingClientRect();
+            const centerX = sceneRect.width / 2;
+            const centerY = sceneRect.height / 2;
+
+            // Группируем амулеты по элементам
+            const elementGroups = {
+                fire: [],
+                wood: [],
+                water: [],
+                earth: [],
+                metal: []
+            };
+
+            existingAmulets.forEach((star, index) => {
+                if (star && star.element && star.amulet) {
+                    elementGroups[star.element].push(star);
+                }
+            });
+
+            // Вычисляем общий индекс для всех амулетов (для формирования цепочки)
+            let globalChainIndex = 0;
+            
+            // Устанавливаем анимацию полета для каждой звезды
+            existingAmulets.forEach((star, index) => {
+                // Проверяем, что амулет существует
+                if (!star || !star.amulet) {
+                    return;
+                }
+                
+                // Получаем текущую позицию амулета в пикселях относительно центра сцены
+                const starRect = star.amulet.getBoundingClientRect();
+                const centerX = sceneRect.width / 2;
+                const centerY = sceneRect.height / 2;
+                const startX = starRect.left + starRect.width / 2 - sceneRect.left - centerX;
+                const startY = starRect.top + starRect.height / 2 - sceneRect.top - centerY;
+                
+                // Финальная позиция - центр (0, 0)
+                const targetX = 0;
+                const targetY = 0;
+                
+                // Создаем хаотичную промежуточную позицию (для первых 4 секунд)
+                const midX = (startX + targetX) / 2;
+                const midY = (startY + targetY) / 2;
+                const distance = Math.sqrt((targetX - startX) ** 2 + (targetY - startY) ** 2);
+                const chaosRadius = distance * 0.3;
+                const chaosAngle = Math.random() * Math.PI * 2;
+                const chaosX = midX + Math.cos(chaosAngle) * chaosRadius;
+                const chaosY = midY + Math.sin(chaosAngle) * chaosRadius;
+                
+                // Позиция на большой круглой цепочке (радиус больше финального)
+                const chainRadius = 250; // Минимум 250px для видимости
+                const chainAngle = (globalChainIndex / existingAmulets.length) * Math.PI * 2; // Равномерное распределение по кругу
+                const chainX = Math.cos(chainAngle) * chainRadius;
+                const chainY = Math.sin(chainAngle) * chainRadius;
+                
+                // Позиция на сужающейся цепочке (промежуточный радиус)
+                const chainTightRadius = 100;
+                const chainTightX = Math.cos(chainAngle) * chainTightRadius;
+                const chainTightY = Math.sin(chainAngle) * chainTightRadius;
+                
+                // Сохраняем все позиции в объекте звезды
+                star.animationData = {
+                    startX, startY,
+                    chaosX, chaosY,
+                    chainX, chainY,
+                    chainTightX, chainTightY,
+                    targetX, targetY
+                };
+                
+                // Переключаем на transform для анимации
+                star.amulet.style.left = '50%';
+                star.amulet.style.top = '50%';
+                star.amulet.style.transform = `translate(${startX}px, ${startY}px)`;
+                
+                globalChainIndex++;
+            });
+
+            // Создаем центральный элемент с 3D кругом
+            createCenterWishOrb(scene);
+            
+            // Убеждаемся, что картинка лошади остается видимой
+            const horseImage = document.getElementById('horseImage');
+            if (horseImage && scene.contains(horseImage)) {
+                horseImage.classList.add('visible', 'small');
+                horseImage.style.zIndex = '20';
+            }
+            
+            // Цветные 3D-шары убраны - оставляем только центральный 3D-шар с иероглифом
+            
+            // Запускаем анимацию сбора через JavaScript
+            scene.classList.add('collecting');
+            
+            // Небольшая задержка для применения стилей
+            requestAnimationFrame(() => {
+                animateCollection(existingAmulets, []); // Пустой массив вместо цветных шаров
+            });
+        }
+
+        // ========== СОЗДАНИЕ ЦЕНТРАЛЬНОГО ЭЛЕМЕНТА ==========
+        function createCenterWishOrb(scene) {
+            // Удаляем старые элементы, если есть (НО НЕ если шар уже растет!)
+            const oldOrb = scene.querySelector('.center-wish-orb');
+            const oldCircle = scene.querySelector('.wish-orb-3d-circle');
+            if (oldOrb) oldOrb.remove();
+            // НЕ удаляем шар, если он уже растет
+            if (oldCircle && !oldCircle.classList.contains('growing')) {
+                oldCircle.remove();
+            } else if (oldCircle) {
+                // Если шар уже растет, не создаем новый
+                return;
+            }
+            
+            // Создаем 3D круг с иероглифом БЕЗ контейнера и БЕЗ дымки
+            const circle3D = document.createElement('div');
+            circle3D.className = 'wish-orb-3d-circle';
+            
+            // Добавляем изображение иероглифа
+            const image = document.createElement('img');
+            const imagePaths = [
+                '/pictures/исполнение желаний.png',
+                './pictures/исполнение желаний.png',
+                'pictures/исполнение желаний.png',
+                '../pictures/исполнение желаний.png'
+            ];
+            let currentPathIndex = 0;
+            image.src = imagePaths[currentPathIndex];
+            image.alt = 'Исполнение желаний';
+            image.className = 'wish-orb-image';
+            image.onerror = function() {
+                currentPathIndex++;
+                if (currentPathIndex < imagePaths.length) {
+                    this.src = imagePaths[currentPathIndex];
+                }
+            };
+            circle3D.appendChild(image);
+            
+            scene.appendChild(circle3D);
+            
+            // Запускаем анимацию роста после небольшой задержки
+            setTimeout(() => {
+                circle3D.classList.add('growing');
+            }, 100);
+        }
+
+        // ========== СОЗДАНИЕ ЦВЕТНЫХ 3D-ШАРОВ ==========
+        function createColored3DBalls(scene, count = 5) {
+            const colors = [
+                { name: 'fire', gradient: 'rgba(255, 107, 107, 0.9), rgba(255, 50, 50, 1)' },
+                { name: 'wood', gradient: 'rgba(81, 207, 102, 0.9), rgba(50, 180, 70, 1)' },
+                { name: 'water', gradient: 'rgba(77, 171, 247, 0.9), rgba(50, 120, 220, 1)' },
+                { name: 'earth', gradient: 'rgba(255, 212, 59, 0.9), rgba(220, 180, 40, 1)' },
+                { name: 'metal', gradient: 'rgba(200, 200, 255, 0.9), rgba(150, 150, 220, 1)' }
+            ];
+            
+            const balls = [];
+            const sceneRect = scene.getBoundingClientRect();
+            
+            for (let i = 0; i < count; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'colored-3d-ball';
+                const color = colors[i % colors.length];
+                ball.style.setProperty('--ball-gradient', color.gradient);
+                ball.style.setProperty('--ball-color', color.name);
+                
+                // Начальная позиция - случайная на экране
+                const startX = (Math.random() - 0.5) * sceneRect.width * 0.8;
+                const startY = (Math.random() - 0.5) * sceneRect.height * 0.8;
+                
+                // Начальный угол для 3D-вращения
+                const startRotX = 15;
+                const startRotY = -5;
+                const startRotZ = 0;
+                
+                // Позиционируем через transform
+                ball.style.transform = `translate(${startX}px, ${startY}px) perspective(500px) rotateX(${startRotX}deg) rotateY(${startRotY}deg) rotateZ(${startRotZ}deg)`;
+                
+                scene.appendChild(ball);
+                balls.push({
+                    element: ball,
+                    startX,
+                    startY,
+                    startRotX,
+                    startRotY,
+                    startRotZ,
+                    color: color.name
+                });
+            }
+            
+            return balls;
+        }
+
+        // ========== АНИМАЦИЯ СБОРА ==========
+        let collectionAnimationFrame = null;
+        
+        function animateCollection(starAmulets, coloredBalls = []) {
+            const scene = document.getElementById('unifiedScene');
+            if (!scene) return;
+            
+            // УДАЛЯЕМ ВСЕ элементы мандалы ПЕРЕД началом анимации (на всякий случай)
+            
+            // Проверяем, что амулеты есть
+            if (!starAmulets || starAmulets.length === 0) {
+                return;
+            }
+            
+            // Фильтруем только валидные амулеты
+            const validAmulets = starAmulets.filter(star => star && star.amulet && star.animationData);
+            if (validAmulets.length === 0) {
+                return;
+            }
+            
+            const startTime = performance.now();
+            
+            // Этапы анимации из конфигурации
+            const stages = {
+                chaos: animationConfig?.stages?.chaos || 4000,
+                toCenter: animationConfig?.stages?.toCenter || 12000
+            };
+            const totalDuration = stages.chaos + stages.toCenter;
+            const disappearDistance = animationConfig?.disappear?.distance || 80;
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / totalDuration, 1);
+                
+                if (progress >= 1) {
+                    // Анимация завершена - останавливаем анимацию, оставляем все элементы на месте
+                    return;
+                }
+                
+                // Анимация амулетов
+                validAmulets.forEach((star) => {
+                    if (!star || !star.animationData || !star.amulet) return;
+                    
+                    const data = star.animationData;
+                    let x, y, scale, opacity;
+                    
+                    if (elapsed < stages.chaos) {
+                        // Этап 1: Хаос (0-4 сек)
+                        const stageProgress = elapsed / stages.chaos;
+                        const easeProgress = stageProgress * stageProgress; // Ускорение
+                        x = data.startX + (data.chaosX - data.startX) * easeProgress;
+                        y = data.startY + (data.chaosY - data.startY) * easeProgress;
+                        scale = 1 + easeProgress * 0.1;
+                        opacity = 1 - easeProgress * 0.05;
+                    } else {
+                        // Этап 2: Движение к центру и исчезновение
+                        const toCenterProgress = (elapsed - stages.chaos) / stages.toCenter;
+                        
+                        // Используем тип плавности из конфигурации
+                        let easeProgress;
+                        const easingType = animationConfig?.easing?.toCenter || 'ease-out-2';
+                        switch(easingType) {
+                            case 'linear':
+                                easeProgress = toCenterProgress;
+                                break;
+                            case 'quadratic':
+                                easeProgress = toCenterProgress * toCenterProgress;
+                                break;
+                            case 'cubic':
+                                easeProgress = toCenterProgress * toCenterProgress * toCenterProgress;
+                                break;
+                            case 'ease-out-2':
+                            default:
+                                easeProgress = 1 - Math.pow(1 - toCenterProgress, 2);
+                        }
+                        
+                        // Движение к центру (0, 0) - очень плавно
+                        x = data.chaosX * (1 - easeProgress);
+                        y = data.chaosY * (1 - easeProgress);
+                        
+                        // Масштаб уменьшается очень медленно
+                        scale = 1.1 * (1 - easeProgress * 0.3);
+                        
+                        // Амулеты остаются полностью видимыми в центре
+                        const distanceToCenter = Math.sqrt(x * x + y * y);
+                        // Амулеты остаются видимыми - не исчезают
+                        opacity = 1;
+                    }
+                    
+                    star.amulet.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+                    star.amulet.style.opacity = opacity;
+                });
+                
+                collectionAnimationFrame = requestAnimationFrame(animate);
+            }
+            
+            // Запускаем анимацию
+            collectionAnimationFrame = requestAnimationFrame(animate);
+        }
+
+
+        // Инициализация при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            initStarSky();
+        });
+
+        // Очистка при выгрузке
+        window.addEventListener('beforeunload', () => {
+            if (collectionAnimationFrame) {
+                cancelAnimationFrame(collectionAnimationFrame);
+            }
+        });
+
+        // ========== СИСТЕМА КОНФИГУРАЦИИ ==========
+        let animationConfig = {
+            stages: {
+                chaos: 4000,
+                toCenter: 20000  // Увеличено с 12000 до 20000 для более медленного исчезновения
+            },
+            easing: {
+                chaos: 'quadratic',
+                toCenter: 'ease-out-2'
+            },
+            trajectories: {
+                type: 'spiral'
+            },
+            connections: {
+                enabled: true,
+                maxDistance: 150
+            },
+            elements: {
+                amulets: {
+                    count: 30
+                },
+                coloredBalls: {
+                    count: 5
+                }
+            },
+            disappear: {
+                distance: 80
+            }
+        };
+    </script>
+</body>
+</html>

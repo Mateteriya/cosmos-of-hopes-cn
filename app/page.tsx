@@ -4,17 +4,60 @@
  * Главная страница приложения "Путь Огненной Лошади" (火马之路)
  */
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import DecorativeParticles from '@/components/DecorativeParticles';
 import ChineseNewYearTimer from '@/components/ChineseNewYearTimer';
 
 export default function Home() {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseAnonKey) {
+          setIsAuthenticated(false);
+          setIsCheckingAuth(false);
+          return;
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-b from-red-950 via-red-900 to-amber-950 flex items-center justify-center p-3 sm:p-4 relative">
       {/* Декоративные элементы - огненные частицы (только на клиенте) */}
       <DecorativeParticles />
+
+      {/* Кнопка профиля (для зарегистрированных пользователей) */}
+      {!isCheckingAuth && isAuthenticated && (
+        <button
+          onClick={() => router.push('/profile')}
+          className="fixed top-4 right-4 z-50 p-3 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl text-white hover:bg-white/20 transition-all transform hover:scale-105"
+          title="Личное пространство"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </button>
+      )}
 
       <div className="max-w-4xl w-full relative z-10">
         {/* Заголовок */}

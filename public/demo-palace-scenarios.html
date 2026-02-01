@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Звёздная Карта Дворца - Демо</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0a1a 0%, #2d1b2d 50%, #1a0a1a 100%);
+            color: white;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            flex-shrink: 0;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .scenarios-grid {
+            display: block;
+            flex: 1;
+            min-height: 0;
+            margin-bottom: 0;
+        }
+
+        .scenario-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Увеличиваем область для Сценария 4 */
+        .scenario-card:first-child .demo-area {
+            height: 700px;
+        }
+
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .scenario-title {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scenario-icon {
+            font-size: 1.5rem;
+        }
+
+        .demo-area {
+            width: 100%;
+            height: 60vh;
+            min-height: 400px;
+            max-height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Сценарий 4: Звёздная Карта - УЛУЧШЕННАЯ ВЕРСИЯ */
+        .star-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(26, 26, 46, 0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(15, 15, 30, 0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
+            padding: 50px;
+            box-sizing: border-box;
+            transform-style: preserve-3d;
+            transform-origin: center center;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .star-map-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Звёздный фон (мелкие звёздочки) */
+        .star-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20% 30%, white, transparent),
+                radial-gradient(2px 2px at 60% 70%, white, transparent),
+                radial-gradient(1px 1px at 50% 50%, white, transparent),
+                radial-gradient(1px 1px at 80% 10%, white, transparent),
+                radial-gradient(2px 2px at 90% 40%, white, transparent);
+            background-size: 200% 200%;
+            background-position: 0% 0%, 100% 0%, 50% 50%, 0% 100%, 100% 100%;
+            animation: starMove 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes starMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+
+        /* 3D Диск-амулет (звезда) - УЛУЧШЕННАЯ ВЕРСИЯ С РЁБРАМИ */
+        .star {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s ease-out, top 0.3s ease-out;
+            transform-style: preserve-3d;
+            --star-z: 0; /* Глубина в 3D пространстве */
+            --star-rotation-x: 0deg;
+            --star-rotation-y: 0deg;
+            will-change: transform, left, top; /* Оптимизация для плавного движения */
+        }
+
+        .star-disk {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 0 20px rgba(0, 0, 0, 0.5),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+            animation: starFloat 6s ease-in-out infinite;
+        }
+        
+        @keyframes starFloat {
+            0%, 100% { 
+                transform: translateZ(0px);
+            }
+            50% { 
+                transform: translateZ(2px);
+            }
+        }
+        
+        /* 3D РЁБРА ДИСКА (как у монеты) - УЛУЧШЕННЫЕ */
+        .star-disk-edge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2;
+            /* Внешнее ребро - выпуклое */
+            border: 5px solid;
+            border-color: 
+                rgba(255, 255, 255, 0.5) 
+                rgba(255, 255, 255, 0.3) 
+                rgba(0, 0, 0, 0.4) 
+                rgba(0, 0, 0, 0.3);
+            box-shadow: 
+                inset 0 0 12px rgba(255, 255, 255, 0.4),
+                inset 0 0 20px rgba(0, 0, 0, 0.3),
+                0 3px 8px rgba(0, 0, 0, 0.6),
+                0 0 15px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Внутреннее ребро - рельефное */
+        .star-disk-edge::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            right: 10%;
+            bottom: 10%;
+            border-radius: 50%;
+            border: 3px solid;
+            border-color: 
+                rgba(255, 255, 255, 0.3) 
+                rgba(255, 255, 255, 0.2) 
+                rgba(0, 0, 0, 0.3) 
+                rgba(0, 0, 0, 0.2);
+            box-shadow: 
+                inset 0 0 8px rgba(255, 255, 255, 0.3),
+                inset 0 0 12px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Внешнее светлое ребро (верхний край) */
+        .star-disk-edge::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            border: 2px solid;
+            border-color: 
+                rgba(255, 255, 255, 0.6) 
+                transparent 
+                transparent 
+                transparent;
+            box-shadow: 
+                0 -2px 8px rgba(255, 255, 255, 0.4),
+                inset 0 0 12px rgba(255, 255, 255, 0.2);
+            clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 0% 50%);
+        }
+
+        /* Радиальный градиент для диска (как у амулетов) - УЛУЧШЕННЫЙ */
+        .star-disk::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.3) 10%,
+                rgba(255, 255, 255, 0.1) 20%,
+                transparent 45%,
+                rgba(0, 0, 0, 0.15) 70%,
+                rgba(0, 0, 0, 0.35) 85%,
+                rgba(0, 0, 0, 0.5) 100%);
+            z-index: 1;
+            opacity: 0.9;
+        }
+        
+        /* Символ амулета в центре звезды */
+        .star-symbol {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 22px;
+            line-height: 1;
+            z-index: 3;
+            text-shadow: 
+                0 0 8px rgba(255, 255, 255, 0.9),
+                0 0 15px rgba(255, 255, 255, 0.6),
+                0 2px 4px rgba(0, 0, 0, 0.9);
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* Усиление символа при зарядке */
+        .star.charged .star-symbol {
+            animation: symbolGlow 1.5s ease-in-out infinite;
+            text-shadow: 
+                0 0 12px rgba(255, 255, 255, 1),
+                0 0 25px currentColor,
+                0 0 35px currentColor,
+                0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        
+        @keyframes symbolGlow {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 0.95;
+            }
+        }
+
+        /* Эффект 3D (тень и свечение) - УЛУЧШЕННЫЙ */
+        .star-disk {
+            filter: 
+                drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7))
+                drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4))
+                drop-shadow(0 0 20px currentColor);
+        }
+
+        .star.fire .star-disk { 
+            color: #ff6b6b;
+            box-shadow: 
+                0 0 30px rgba(255, 107, 107, 0.8),
+                0 0 50px rgba(255, 107, 107, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 107, 107, 0.2);
+        }
+        .star.wood .star-disk { 
+            color: #51cf66;
+            box-shadow: 
+                0 0 30px rgba(81, 207, 102, 0.8),
+                0 0 50px rgba(81, 207, 102, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(81, 207, 102, 0.2);
+        }
+        .star.water .star-disk { 
+            color: #4dabf7;
+            box-shadow: 
+                0 0 30px rgba(77, 171, 247, 0.8),
+                0 0 50px rgba(77, 171, 247, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(77, 171, 247, 0.2);
+        }
+        .star.earth .star-disk { 
+            color: #ffd43b;
+            box-shadow: 
+                0 0 30px rgba(255, 212, 59, 0.8),
+                0 0 50px rgba(255, 212, 59, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 212, 59, 0.2);
+        }
+        .star.metal .star-disk { 
+            color: #adb5bd;
+            box-shadow: 
+                0 0 30px rgba(173, 181, 189, 0.8),
+                0 0 50px rgba(173, 181, 189, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.6),
+                inset 0 0 20px rgba(173, 181, 189, 0.2);
+        }
+
+        /* 3D эффект - звёзды на разной глубине, но БЕЗ ПОВОРОТОВ (всегда фронтально) */
+        .star {
+            transform: 
+                translateZ(var(--star-z, 0px));
+        }
+        
+        /* Масштабирование в зависимости от глубины, но БЕЗ ПОВОРОТОВ */
+        .star-disk {
+            transform: scale(calc(1 + var(--star-z, 0) / 300));
+        }
+
+        .star:hover {
+            transform: 
+                translateZ(calc(var(--star-z, 0px) + 80px))
+                scale(calc(var(--current-zoom, 1) * 1.4));
+            z-index: 10;
+        }
+        
+        .star:hover .star-disk {
+            animation: starFloatHover 2s ease-in-out infinite;
+        }
+        
+        @keyframes starFloatHover {
+            0%, 100% { 
+                transform: scale(1.1);
+            }
+            50% { 
+                transform: scale(1.15);
+            }
+        }
+
+        .star:hover .star-disk {
+            box-shadow: 
+                0 0 40px currentColor,
+                0 8px 16px rgba(0, 0, 0, 0.8),
+                inset 0 0 40px rgba(255, 255, 255, 0.3);
+        }
+
+        .star.charged .star-disk {
+            animation: starPulse 1.5s ease-in-out infinite, starFloat 4s ease-in-out infinite;
+            box-shadow: 
+                0 0 40px currentColor,
+                0 0 60px currentColor,
+                0 0 80px currentColor,
+                0 4px 12px rgba(0, 0, 0, 0.8),
+                inset 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes starPulse {
+            0%, 100% { 
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.2);
+                filter: brightness(1.3);
+            }
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { 
+                opacity: 0.8;
+                filter: brightness(1);
+                transform: scale(1);
+            }
+            25% { 
+                opacity: 0.9;
+                filter: brightness(1.1);
+                transform: scale(1.02);
+            }
+            50% { 
+                opacity: 1;
+                filter: brightness(1.2);
+                transform: scale(1.05);
+            }
+            75% { 
+                opacity: 0.9;
+                filter: brightness(1.1);
+                transform: scale(1.02);
+            }
+        }
+
+        .star:not(.charged) .star-disk {
+            animation: starTwinkle 4s ease-in-out infinite, starFloat 6s ease-in-out infinite;
+        }
+
+        /* Проекция Китайского Дворца - АУТЕНТИЧНЫЙ ВИД по принципам фэн-шуй */
+        .palace-outline {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            height: 450px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Платформа (основание) - горизонтальность, связь с землей */
+        .palace-platform {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            height: 8%;
+            background: linear-gradient(180deg, 
+                rgba(200, 150, 100, 0.6) 0%,
+                rgba(150, 100, 50, 0.8) 50%,
+                rgba(100, 70, 40, 0.6) 100%);
+            border-radius: 4px;
+            box-shadow: 
+                0 0 20px rgba(200, 150, 100, 0.4),
+                inset 0 2px 10px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Основной контур Дворца - основание (симметричное, горизонтальное) */
+        .palace-base {
+            position: absolute;
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75%;
+            height: 55%;
+            border: 4px solid rgba(220, 50, 50, 0.7); /* Красный - цвет удачи */
+            border-radius: 4px;
+            background: linear-gradient(180deg, 
+                rgba(255, 240, 200, 0.15) 0%,
+                rgba(255, 220, 150, 0.12) 50%,
+                rgba(200, 150, 100, 0.1) 100%);
+            box-shadow: 
+                0 0 40px rgba(255, 200, 87, 0.3),
+                inset 0 0 40px rgba(255, 255, 255, 0.1),
+                inset 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Внутренний двор (сыхэюань) - замкнутое пространство, ВИДИМЫЙ */
+        .palace-courtyard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55%;
+            height: 45%;
+            border: 3px solid rgba(220, 50, 50, 0.6); /* Красная граница */
+            border-radius: 4px;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 240, 200, 0.12) 50%,
+                rgba(255, 220, 150, 0.1) 100%);
+            box-shadow: 
+                inset 0 0 40px rgba(255, 200, 87, 0.3),
+                inset 0 4px 20px rgba(0, 0, 0, 0.15),
+                0 0 25px rgba(255, 200, 87, 0.2);
+        }
+
+        /* Декоративные элементы двора */
+        .palace-courtyard::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 70%;
+            border: 2px solid rgba(255, 200, 87, 0.3);
+            border-radius: 50%;
+            box-shadow: inset 0 0 20px rgba(255, 200, 87, 0.2);
+        }
+        
+        /* Звёзды контура дворца - более яркие */
+        .star.palace-outline-star .star-disk {
+            box-shadow: 
+                0 0 30px currentColor,
+                0 0 40px currentColor,
+                0 4px 8px rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Звёзды внутри дворца - тоже яркие */
+        .star.palace-inside-star .star-disk {
+            box-shadow: 
+                0 0 25px currentColor,
+                0 0 35px currentColor,
+                0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Китайская крыша - многоярусная с изогнутыми краями (горизонтальность) */
+        .palace-roof {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 40%;
+            pointer-events: none;
+        }
+
+        /* Верхний ярус крыши - главная крыша (желтый - цвет императора) */
+        /* ИЗОГНУТАЯ КВЕРХУ - характерная форма китайской крыши */
+        /* Края ПОДНИМАЮТСЯ ВВЕРХ, центр ниже - классическая китайская форма */
+        .palace-roof-main {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65%;
+            height: 50%;
+            background: linear-gradient(135deg, 
+                rgba(255, 220, 100, 0.7) 0%,  /* Желтый */
+                rgba(255, 180, 60, 0.85) 30%,
+                rgba(220, 140, 40, 0.8) 60%,
+                rgba(180, 100, 30, 0.7) 100%);
+            /* ИЗОГНУТАЯ КВЕРХУ форма - края ВЫШЕ центра (китайский стиль) */
+            clip-path: polygon(
+                0% 100%,   /* Левый край внизу */
+                5% 85%, 
+                10% 70%, 
+                15% 55%, 
+                20% 45%, 
+                30% 38%, 
+                50% 35%,   /* Центр - САМАЯ НИЗКАЯ точка */
+                70% 38%, 
+                80% 45%, 
+                85% 55%, 
+                90% 70%, 
+                95% 85%, 
+                100% 100%  /* Правый край внизу */
+            );
+            box-shadow: 
+                0 0 35px rgba(255, 200, 87, 0.6),
+                0 0 60px rgba(255, 150, 50, 0.4),
+                inset 0 0 25px rgba(255, 255, 255, 0.25),
+                inset 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Черепица на крыше - горизонтальные линии (керамическая черепица) */
+        .palace-roof-main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    transparent 3px,
+                    rgba(0, 0, 0, 0.15) 3px,
+                    rgba(0, 0, 0, 0.15) 6px
+                );
+            clip-path: polygon(
+                0% 100%, 
+                5% 85%, 
+                10% 70%, 
+                15% 55%, 
+                20% 45%, 
+                30% 38%, 
+                50% 35%, 
+                70% 38%, 
+                80% 45%, 
+                85% 55%, 
+                90% 70%, 
+                95% 85%, 
+                100% 100%
+            );
+            opacity: 0.5;
+        }
+
+        /* Загнутые углы крыши (китайский стиль) - ИЗОГНУТЫЕ КВЕРХУ */
+        /* Коньки крыши - края ПОДНИМАЮТСЯ ВВЕРХ */
+        .palace-roof-main::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 35px;
+            background: linear-gradient(90deg, 
+                transparent 0%,
+                rgba(255, 200, 87, 0.9) 10%,
+                rgba(255, 150, 50, 0.95) 25%,
+                rgba(255, 200, 87, 0.88) 50%,
+                rgba(255, 150, 50, 0.95) 75%,
+                rgba(255, 200, 87, 0.9) 90%,
+                transparent 100%);
+            /* Изогнутая форма - КРАЯ ВЫШЕ центра (китайский стиль) */
+            clip-path: polygon(
+                0% 100%,
+                3% 70%,
+                8% 40%,
+                15% 15%,
+                25% 0%,   /* Левый край - ВЫСОКИЙ */
+                50% 5%,   /* Центр - НИЖЕ краев */
+                75% 0%,   /* Правый край - ВЫСОКИЙ */
+                85% 15%,
+                92% 40%,
+                97% 70%,
+                100% 100%
+            );
+            box-shadow: 
+                0 0 35px rgba(255, 200, 87, 0.9),
+                0 0 60px rgba(255, 150, 50, 0.6),
+                inset 0 0 25px rgba(255, 255, 255, 0.6);
+        }
+
+        /* Нижний ярус крыши - более широкий (иерархия), ИЗОГНУТАЯ КВЕРХУ */
+        /* Края ПОДНИМАЮТСЯ ВВЕРХ, центр ниже - китайский стиль */
+        .palace-roof-lower {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 55%;
+            background: linear-gradient(135deg, 
+                rgba(255, 180, 70, 0.6) 0%,
+                rgba(255, 140, 50, 0.75) 30%,
+                rgba(200, 100, 40, 0.7) 60%,
+                rgba(160, 80, 30, 0.6) 100%);
+            /* ИЗОГНУТАЯ КВЕРХУ форма - КРАЯ ВЫШЕ центра */
+            clip-path: polygon(
+                0% 100%,   /* Левый край внизу */
+                3% 88%, 
+                6% 76%, 
+                10% 64%, 
+                15% 54%, 
+                22% 46%, 
+                30% 40%, 
+                50% 37%,   /* Центр - САМАЯ НИЗКАЯ точка */
+                70% 40%, 
+                78% 46%, 
+                85% 54%, 
+                90% 64%, 
+                94% 76%, 
+                97% 88%, 
+                100% 100%  /* Правый край внизу */
+            );
+            box-shadow: 
+                0 0 30px rgba(255, 180, 70, 0.5),
+                0 0 50px rgba(255, 140, 50, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.2),
+                inset 0 3px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Черепица на нижней крыше (керамическая) */
+        .palace-roof-lower::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent 0px,
+                    transparent 3px,
+                    rgba(0, 0, 0, 0.15) 3px,
+                    rgba(0, 0, 0, 0.15) 6px
+                );
+            clip-path: polygon(
+                0% 100%, 
+                3% 88%, 
+                6% 76%, 
+                10% 64%, 
+                15% 54%, 
+                22% 46%, 
+                30% 40%, 
+                50% 37%, 
+                70% 40%, 
+                78% 46%, 
+                85% 54%, 
+                90% 64%, 
+                94% 76%, 
+                97% 88%, 
+                100% 100%
+            );
+            opacity: 0.5;
+        }
+
+        /* Загнутые углы нижней крыши - ИЗОГНУТЫЕ КВЕРХУ */
+        /* Коньки крыши - края ПОДНИМАЮТСЯ ВВЕРХ */
+        .palace-roof-lower::after {
+            content: '';
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 32px;
+            background: linear-gradient(90deg, 
+                transparent 0%,
+                rgba(255, 180, 70, 0.85) 10%,
+                rgba(255, 140, 50, 0.9) 25%,
+                rgba(255, 180, 70, 0.83) 50%,
+                rgba(255, 140, 50, 0.9) 75%,
+                rgba(255, 180, 70, 0.85) 90%,
+                transparent 100%);
+            /* Изогнутая форма - КРАЯ ВЫШЕ центра (китайский стиль) */
+            clip-path: polygon(
+                0% 100%,
+                2% 75%,
+                6% 50%,
+                12% 25%,
+                20% 0%,   /* Левый край - ВЫСОКИЙ */
+                50% 4%,   /* Центр - НИЖЕ краев */
+                80% 0%,   /* Правый край - ВЫСОКИЙ */
+                88% 25%,
+                94% 50%,
+                98% 75%,
+                100% 100%
+            );
+            box-shadow: 
+                0 0 30px rgba(255, 180, 70, 0.8),
+                0 0 55px rgba(255, 140, 50, 0.5),
+                inset 0 0 22px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Декоративные элементы на крыше (символика) */
+        .palace-roof-decoration {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 35px;
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.95) 0%,
+                rgba(255, 220, 100, 0.9) 30%,
+                rgba(255, 180, 60, 0.85) 60%,
+                rgba(220, 140, 40, 0.9) 100%);
+            border-radius: 5px 5px 0 0;
+            box-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.7),
+                0 0 35px rgba(255, 200, 87, 0.5),
+                inset 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+
+        /* Колонны Дворца - деревянный каркас (доугун), симметрично расположенные */
+        .palace-column {
+            position: absolute;
+            width: 12px;
+            height: 75px;
+            background: linear-gradient(180deg, 
+                rgba(220, 180, 120, 0.7) 0%,  /* Дерево */
+                rgba(180, 140, 90, 0.8) 30%,
+                rgba(150, 110, 70, 0.75) 60%,
+                rgba(120, 90, 50, 0.7) 100%);
+            bottom: 8%;
+            border-radius: 6px 6px 0 0;
+            box-shadow: 
+                0 0 12px rgba(220, 180, 120, 0.4),
+                inset 0 0 8px rgba(255, 255, 255, 0.15),
+                inset -2px 0 5px rgba(0, 0, 0, 0.2),
+                inset 2px 0 5px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Капитель колонны (доугун - деревянная конструкция) */
+        .palace-column::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: -4px;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, 
+                rgba(255, 200, 87, 0.9) 0%,
+                rgba(220, 150, 80, 0.8) 50%,
+                rgba(180, 120, 60, 0.7) 100%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px rgba(255, 200, 87, 0.6),
+                inset 0 0 8px rgba(255, 255, 255, 0.3),
+                0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Горизонтальная балка над колонной (доугун) */
+        .palace-column::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -8px;
+            width: 28px;
+            height: 6px;
+            background: linear-gradient(90deg, 
+                rgba(220, 150, 80, 0.8) 0%,
+                rgba(255, 200, 87, 0.9) 50%,
+                rgba(220, 150, 80, 0.8) 100%);
+            border-radius: 3px;
+            box-shadow: 
+                0 0 10px rgba(255, 200, 87, 0.5),
+                inset 0 0 5px rgba(255, 255, 255, 0.2);
+        }
+
+        /* СТРОГО СИММЕТРИЧНОЕ расположение колонн - РАВНОМЕРНЫЕ отступы */
+        /* 4 колонны: равномерно распределены по ширине основания (75%) */
+        /* Отступы: 15% от краев, затем равномерно: 20%, 40%, 60%, 80% от левого края основания */
+        .palace-column:nth-child(1) { left: 20%; }  /* Первая колонна */
+        .palace-column:nth-child(2) { left: 40%; }  /* Вторая колонна */
+        .palace-column:nth-child(3) { left: 60%; }  /* Третья колонна */
+        .palace-column:nth-child(4) { left: 80%; }  /* Четвертая колонна */
+
+        /* Соединительные линии между звёздами (созвездие) */
+        .constellation-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent 0%,
+                rgba(255, 255, 255, 0.2) 20%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.2) 80%,
+                transparent 100%);
+            pointer-events: none;
+            z-index: 0;
+            animation: lineGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes lineGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border-color: transparent;
+        }
+        
+        /* Индикатор зума */
+        .zoom-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-top: 10px;
+            flex-shrink: 0;
+        }
+
+        .features {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .features ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .features li {
+            padding: 5px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+        }
+
+        .features li::before {
+            content: '✨ ';
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 Звёздная Карта Дворца</h1>
+        <p class="subtitle">Интерактивная визуализация Сценария 4</p>
+
+        <div class="scenarios-grid">
+            <!-- Сценарий 4: Звёздная Карта -->
+            <div class="scenario-card">
+                <div class="scenario-title">
+                    <span class="scenario-icon">🌟</span>
+                    <span>Сценарий 4: Звёздная Карта Дворца</span>
+                </div>
+                <div class="demo-area">
+                    <div class="zoom-indicator" id="zoomIndicator">100%</div>
+                    <div class="star-map-wrapper" id="starMapWrapper">
+                        <div class="star-map" id="starMap">
+                            <div class="star-background"></div>
+                            <div class="palace-outline">
+                                <div class="palace-platform"></div>
+                                <div class="palace-roof">
+                                    <div class="palace-roof-main"></div>
+                                    <div class="palace-roof-lower"></div>
+                                    <div class="palace-roof-decoration"></div>
+                                </div>
+                                <div class="palace-base">
+                                    <div class="palace-courtyard"></div>
+                                    <div class="palace-column"></div>
+                                    <div class="palace-column"></div>
+                                    <div class="palace-column"></div>
+                                    <div class="palace-column"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button class="btn" onclick="chargeStar('starMap')">⚡ Зарядить звезду</button>
+                    <button class="btn" onclick="showMeteorShower('starMap')">🌠 Метеоритный дождь</button>
+                    <button class="btn" onclick="zoomIn()">🔍+ Приблизить</button>
+                    <button class="btn" onclick="zoomOut()">🔍- Отдалить</button>
+                    <button class="btn" onclick="resetZoom()">↺ Сброс</button>
+                </div>
+                <div class="description">
+                    Все амулеты появляются как звёзды на небе, формируя созвездие в форме Дворца. 
+                    Каждая звезда светится цветом своего элемента. Ежедневная зарядка делает звезду ярче.
+                </div>
+                <div class="features">
+                    <ul>
+                        <li>Интерактивная карта со звёздами</li>
+                        <li>Ежедневная зарядка звёзд</li>
+                        <li>Метеоритный дождь желаний 12 февраля</li>
+                        <li>Масштабируемо для любого количества амулетов</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Система предотвращения перекрытия
+        const occupiedPositions = [];
+        const minDistance = 8; // Минимальное расстояние между монетками в процентах
+        
+        function isPositionFree(x, y, existingPositions) {
+            for (const pos of existingPositions) {
+                const distance = Math.sqrt(Math.pow(x - pos.x, 2) + Math.pow(y - pos.y, 2));
+                if (distance < minDistance) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function findFreePosition(existingPositions, maxAttempts = 100) {
+            for (let i = 0; i < maxAttempts; i++) {
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                if (isPositionFree(x, y, existingPositions)) {
+                    return { x, y };
+                }
+            }
+            // Если не нашли свободную позицию, возвращаем случайную
+            return { x: Math.random() * 100, y: Math.random() * 100 };
+        }
+
+        // Инициализация звёздной карты - УЛУЧШЕННАЯ ВЕРСИЯ С ПРЕДОТВРАЩЕНИЕМ ПЕРЕКРЫТИЯ
+        function initStarMap(containerId) {
+            const container = document.getElementById(containerId);
+            const elements = ['fire', 'wood', 'water', 'earth', 'metal'];
+            const elementColors = {
+                fire: ['#DC2626', '#EA580C', '#F97316', '#EF4444', '#B91C1C'],
+                wood: ['#16A34A', '#22C55E', '#15803D', '#65A30D', '#84CC16'],
+                water: ['#2563EB', '#3B82F6', '#1E40AF', '#0EA5E9', '#0284C7'],
+                earth: ['#CA8A04', '#EAB308', '#A16207', '#92400E', '#B45309'],
+                metal: ['#64748B', '#475569', '#F1F5F9', '#CBD5E1', '#334155']
+            };
+            
+            // Очищаем массив занятых позиций
+            occupiedPositions.length = 0;
+            
+            // Создаём больше звёзд (60-80) для более богатого неба
+            const starCount = 70;
+            const stars = [];
+            
+            // Позиции для формирования контура Дворца (созвездие) - с проверкой перекрытия
+            const palacePositions = [
+                // Крыша
+                { x: 50, y: 20 }, { x: 45, y: 25 }, { x: 55, y: 25 },
+                // Стены
+                { x: 30, y: 40 }, { x: 35, y: 45 }, { x: 40, y: 50 },
+                { x: 60, y: 50 }, { x: 65, y: 45 }, { x: 70, y: 40 },
+                // Основание
+                { x: 25, y: 65 }, { x: 50, y: 70 }, { x: 75, y: 65 },
+                { x: 30, y: 75 }, { x: 70, y: 75 },
+                // Дополнительные звёзды вокруг Дворца
+                { x: 20, y: 30 }, { x: 80, y: 30 },
+                { x: 15, y: 50 }, { x: 85, y: 50 },
+                { x: 20, y: 70 }, { x: 80, y: 70 },
+            ];
+            
+            // Позиции для звёзд ВНУТРИ дворца - с проверкой перекрытия
+            const palaceInsidePositions = [
+                // Внутри дворца (центр и вокруг центра) - скорректированы для избежания перекрытия
+                { x: 50, y: 45 }, { x: 45, y: 50 }, { x: 55, y: 50 },
+                { x: 40, y: 55 }, { x: 60, y: 55 },
+                { x: 50, y: 60 }, { x: 45, y: 60 }, { x: 55, y: 60 },
+                { x: 35, y: 50 }, { x: 65, y: 50 },
+                { x: 50, y: 35 }, { x: 45, y: 40 }, { x: 55, y: 40 },
+                { x: 40, y: 45 }, { x: 60, y: 45 },
+                { x: 50, y: 55 }, { x: 48, y: 48 }, { x: 52, y: 48 },
+            ];
+            
+            // Добавляем позиции дворца в занятые
+            palacePositions.forEach(pos => occupiedPositions.push(pos));
+            palaceInsidePositions.forEach(pos => occupiedPositions.push(pos));
+            
+            // Создаём звёзды в форме Дворца (контур)
+            palacePositions.forEach((pos, index) => {
+                const element = elements[index % elements.length];
+                const star = createStarDisk(element, pos.x, pos.y, elementColors[element], true);
+                star.classList.add('palace-outline-star'); // Помечаем звёзды контура
+                stars.push(star);
+                container.appendChild(star);
+            });
+            
+            // Создаём звёзды ВНУТРИ дворца
+            palaceInsidePositions.forEach((pos, index) => {
+                const element = elements[index % elements.length];
+                const star = createStarDisk(element, pos.x, pos.y, elementColors[element], true);
+                star.classList.add('palace-inside-star'); // Помечаем звёзды внутри
+                stars.push(star);
+                container.appendChild(star);
+            });
+            
+            // Добавляем случайные звёзды вокруг (фон) - но не внутри дворца, с проверкой перекрытия
+            for (let i = palacePositions.length + palaceInsidePositions.length; i < starCount; i++) {
+                const element = elements[Math.floor(Math.random() * elements.length)];
+                let pos;
+                let attempts = 0;
+                
+                // Генерируем позицию вне дворца и без перекрытия
+                do {
+                    pos = findFreePosition(occupiedPositions);
+                    attempts++;
+                } while (
+                    attempts < 100 && 
+                    // Проверяем, что не внутри дворца (примерно 30-70% по X, 25-75% по Y)
+                    (pos.x > 30 && pos.x < 70 && pos.y > 25 && pos.y < 75)
+                );
+                
+                // Добавляем позицию в занятые
+                occupiedPositions.push(pos);
+                
+                const star = createStarDisk(element, pos.x, pos.y, elementColors[element], true);
+                stars.push(star);
+                container.appendChild(star);
+            }
+            
+            // Создаём соединительные линии между звёздами Дворца
+            createConstellationLines(container, palacePositions);
+            
+            // Запускаем анимацию движения для всех звёзд
+            startStarMovement(stars);
+            
+            return stars;
+        }
+        
+        // Символы амулетов (из приложения: Лошадь, Дракон, Монета, Феникс)
+        const amuletSymbols = ['🐴', '🐉', '🪙', '🦅'];
+        
+        // Создание 3D-диска (звезды-амулета) - УЛУЧШЕННАЯ ВЕРСИЯ С ДВИЖЕНИЕМ
+        function createStarDisk(element, x, y, colors, enableMovement = false) {
+            const star = document.createElement('div');
+            star.className = `star ${element}`;
+            star.style.left = `${x}%`;
+            star.style.top = `${y}%`;
+            star.style.animationDelay = `${Math.random() * 3}s`;
+            star.style.marginLeft = '-25px'; // Центрирование
+            star.style.marginTop = '-25px';
+            star.style.position = 'absolute';
+            star.style.transition = 'transform 0.3s ease-out';
+            
+            // Сохраняем начальную позицию для движения
+            star.dataset.initialX = x;
+            star.dataset.initialY = y;
+            star.dataset.currentX = x;
+            star.dataset.currentY = y;
+            
+            // Случайная начальная глубина для 3D эффекта (от -150 до 150 для большей глубины)
+            const baseZ = (Math.random() - 0.5) * 300;
+            star.dataset.baseZ = baseZ;
+            star.style.setProperty('--star-z', `${baseZ}px`);
+            
+            // Убираем повороты - монетки всегда фронтально к экрану
+            star.style.setProperty('--star-rotation-x', '0deg');
+            star.style.setProperty('--star-rotation-y', '0deg');
+            
+            const disk = document.createElement('div');
+            disk.className = 'star-disk';
+            
+            // Случайный цвет из палитры элемента
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            disk.style.background = `radial-gradient(circle, ${color} 0%, ${color}dd 50%, ${color}aa 100%)`;
+            
+            // Создаём рёбра диска (3D эффект)
+            const edge = document.createElement('div');
+            edge.className = 'star-disk-edge';
+            disk.appendChild(edge);
+            
+            // Создаём символ амулета в центре диска
+            const symbol = document.createElement('div');
+            symbol.className = 'star-symbol';
+            // Случайный символ из 4 вариантов
+            const randomSymbol = amuletSymbols[Math.floor(Math.random() * amuletSymbols.length)];
+            symbol.textContent = randomSymbol;
+            symbol.style.color = 'rgba(255, 255, 255, 0.95)';
+            
+            // Добавляем символ в диск
+            disk.appendChild(symbol);
+            star.appendChild(disk);
+            
+            star.onclick = () => {
+                star.classList.toggle('charged');
+            };
+            
+            // Убираем вращение - монетки всегда фронтально
+            star.style.setProperty('--disk-rotation', '0deg');
+            
+            return star;
+        }
+        
+        // Система плавного движения звёзд (монеток) - как рыбки в аквариуме
+        function startStarMovement(stars) {
+            stars.forEach((star, index) => {
+                // Уникальные параметры движения для каждой звезды - МЕДЛЕННЕЕ
+                const speed = 0.003 + Math.random() * 0.005; // Медленная скорость (0.003-0.008)
+                const range = 1.0 + Math.random() * 1.0; // Небольшой диапазон движения (1.0-2.0%)
+                const angle = Math.random() * Math.PI * 2; // Начальный угол
+                
+                star.dataset.moveSpeed = speed;
+                star.dataset.moveRange = range;
+                star.dataset.moveAngle = angle;
+                star.dataset.moveTime = Math.random() * Math.PI * 2; // Начальная фаза
+                
+                // Анимация движения - плавная как рыбки
+                let lastTime = performance.now();
+                function animate(currentTime) {
+                    if (!star.parentElement) return; // Если звезда удалена, прекращаем анимацию
+                    
+                    const deltaTime = (currentTime - lastTime) / 1000; // В секундах
+                    lastTime = currentTime;
+                    
+                    const time = parseFloat(star.dataset.moveTime) + parseFloat(star.dataset.moveSpeed) * deltaTime * 60;
+                    star.dataset.moveTime = time;
+                    
+                    const range = parseFloat(star.dataset.moveRange);
+                    const initialX = parseFloat(star.dataset.initialX);
+                    const initialY = parseFloat(star.dataset.initialY);
+                    
+                    // Плавное круговое движение - очень медленное
+                    const offsetX = Math.cos(time) * range;
+                    const offsetY = Math.sin(time) * range;
+                    
+                    const newX = initialX + offsetX;
+                    const newY = initialY + offsetY;
+                    
+                    star.dataset.currentX = newX;
+                    star.dataset.currentY = newY;
+                    
+                    star.style.left = `${newX}%`;
+                    star.style.top = `${newY}%`;
+                    
+                    requestAnimationFrame(animate);
+                }
+                
+                // Запускаем анимацию с небольшой задержкой для разнообразия
+                setTimeout(() => {
+                    requestAnimationFrame(animate);
+                }, index * 20);
+            });
+        }
+        
+        // Создание соединительных линий (созвездие Дворца)
+        function createConstellationLines(container, positions) {
+            // Линии для крыши
+            createLine(container, positions[0], positions[1]);
+            createLine(container, positions[0], positions[2]);
+            createLine(container, positions[1], positions[2]);
+            
+            // Линии для стен
+            createLine(container, positions[1], positions[3]);
+            createLine(container, positions[2], positions[6]);
+            createLine(container, positions[3], positions[4]);
+            createLine(container, positions[4], positions[5]);
+            createLine(container, positions[6], positions[7]);
+            createLine(container, positions[7], positions[8]);
+            
+            // Линии для основания
+            createLine(container, positions[3], positions[9]);
+            createLine(container, positions[8], positions[11]);
+            createLine(container, positions[9], positions[10]);
+            createLine(container, positions[10], positions[11]);
+            createLine(container, positions[9], positions[12]);
+            createLine(container, positions[11], positions[13]);
+        }
+        
+        function createLine(container, from, to) {
+            const line = document.createElement('div');
+            line.className = 'constellation-line';
+            
+            const dx = to.x - from.x;
+            const dy = to.y - from.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            line.style.width = `${length}%`;
+            line.style.left = `${from.x}%`;
+            line.style.top = `${from.y}%`;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.transformOrigin = '0 0';
+            
+            container.appendChild(line);
+        }
+
+        // Зарядка звезды - УЛУЧШЕННАЯ
+        function chargeStar(containerId) {
+            const stars = document.querySelectorAll(`#${containerId} .star`);
+            if (stars.length === 0) return;
+            
+            const randomStar = stars[Math.floor(Math.random() * stars.length)];
+            randomStar.classList.add('charged');
+            
+            // Визуальный эффект зарядки
+            const disk = randomStar.querySelector('.star-disk');
+            if (disk) {
+                disk.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    disk.style.transform = '';
+                }, 300);
+            }
+        }
+
+        // Метеоритный дождь - УЛУЧШЕННАЯ АНИМАЦИЯ
+        function showMeteorShower(containerId) {
+            const container = document.getElementById(containerId);
+            const stars = container.querySelectorAll('.star');
+            
+            // Если нет заряженных, заряжаем несколько случайных
+            const chargedStars = container.querySelectorAll('.star.charged');
+            if (chargedStars.length === 0) {
+                // Заряжаем 10 случайных звёзд
+                for (let i = 0; i < 10 && i < stars.length; i++) {
+                    const randomStar = stars[Math.floor(Math.random() * stars.length)];
+                    if (!randomStar.classList.contains('charged')) {
+                        randomStar.classList.add('charged');
+                    }
+                }
+            }
+            
+            const finalCharged = container.querySelectorAll('.star.charged');
+            
+            finalCharged.forEach((star, index) => {
+                setTimeout(() => {
+                    const disk = star.querySelector('.star-disk');
+                    const angle = (index / finalCharged.length) * 360;
+                    const distance = 300 + Math.random() * 200;
+                    const x = Math.cos(angle * Math.PI / 180) * distance;
+                    const y = Math.sin(angle * Math.PI / 180) * distance;
+                    
+                    star.style.transition = 'all 3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    star.style.transform = `translate(${x}px, ${y}px) scale(0) rotate(720deg)`;
+                    star.style.opacity = '0';
+                    
+                    if (disk) {
+                        disk.style.transform = 'scale(0)';
+                    }
+                }, index * 50);
+            });
+            
+            // Сброс через 4 секунды
+            setTimeout(() => {
+                finalCharged.forEach(star => {
+                    star.style.transition = '';
+                    star.style.transform = '';
+                    star.style.opacity = '';
+                    star.classList.remove('charged');
+                    const disk = star.querySelector('.star-disk');
+                    if (disk) {
+                        disk.style.transform = '';
+                    }
+                });
+            }, 4000);
+        }
+
+
+        // Зум функциональность - масштабирование только звезд и дворца, а не всего контейнера
+        let currentZoom = 1;
+        const minZoom = 0.5;
+        const maxZoom = 3;
+        const zoomStep = 0.15;
+        
+        function updateZoom() {
+            const stars = document.querySelectorAll('.star');
+            const palaceOutline = document.querySelector('.palace-outline');
+            const zoomIndicator = document.getElementById('zoomIndicator');
+            
+            // Масштабируем только звезды и дворец, а не весь контейнер
+            // Сохраняем текущий зум в CSS переменной для использования в hover
+            document.documentElement.style.setProperty('--current-zoom', currentZoom);
+            
+            // Масштабируем звезды
+            stars.forEach(star => {
+                // Применяем зум к transform, сохраняя остальные свойства
+                const baseZ = parseFloat(star.dataset.baseZ || 0);
+                star.style.transform = `translateZ(${baseZ}px) scale(${currentZoom})`;
+            });
+            
+            // Масштабируем проекцию Дворца пропорционально звездам
+            if (palaceOutline) {
+                palaceOutline.style.transform = `translate(-50%, -50%) scale(${currentZoom})`;
+            }
+            
+            if (zoomIndicator) {
+                zoomIndicator.textContent = `${Math.round(currentZoom * 100)}%`;
+            }
+        }
+        
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
+                updateZoom();
+            }
+        }
+        
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(currentZoom - zoomStep, minZoom);
+                updateZoom();
+            }
+        }
+        
+        function resetZoom() {
+            currentZoom = 1;
+            updateZoom();
+        }
+        
+        // 3D эффект глубины для звёзд (независимо от зума) - БЕЗ ПОВОРОТОВ
+        function updateStarDepth() {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                const baseZ = parseFloat(star.dataset.baseZ || 0);
+                // Только глубина, без поворотов
+                star.style.setProperty('--star-z', `${baseZ}px`);
+                star.style.setProperty('--star-rotation-x', '0deg');
+                star.style.setProperty('--star-rotation-y', '0deg');
+            });
+        }
+        
+        // Инициализация при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            initStarMap('starMap');
+            // Инициализируем глубину звёзд
+            setTimeout(() => {
+                updateStarDepth();
+            }, 100);
+            
+            // Добавляем обработчик колеса мыши для зума (как в основном приложении)
+            const wrapper = document.getElementById('starMapWrapper');
+            if (wrapper) {
+                wrapper.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    if (e.deltaY < 0) {
+                        zoomIn();
+                    } else {
+                        zoomOut();
+                    }
+                }, { passive: false });
+            }
+            
+            // Периодическое обновление глубины для динамики
+            setInterval(() => {
+                updateStarDepth();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
+

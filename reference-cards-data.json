@@ -1,0 +1,62 @@
+{
+  "referenceCards": [
+    {
+      "name": "Дональд Трамп",
+      "birthDate": "1946-06-14",
+      "birthTime": "10:54",
+      "birthPlace": "America/New_York",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "gender": "male",
+      "source": "https://www.astro.com/astro-databank/Trump,_Donald",
+      "sources": [
+        {
+          "name": "Mingli.ru",
+          "pillars": ["丙戌", "甲午", "己巳", "己巳"],
+          "structure": {
+            "type": "Follow Structure",
+            "subtype": "从杀格",
+            "subtypeRu": "Следование за Властью",
+            "usefulElements": ["Металл", "Земля"]
+          },
+          "notes": "Экстремально слабый Господин Дня, доминирует элемент Власти"
+        },
+        {
+          "name": "Наш калькулятор",
+          "pillars": ["丙戌", "甲午", "己巳", "己巳"],
+          "structure": {
+            "type": "Normal Structure",
+            "strength": "weak",
+            "usefulElements": ["Огонь", "Дерево"]
+          },
+          "notes": "НЕ ОПРЕДЕЛИЛ специальную структуру - требуется доработка!"
+        }
+      ]
+    }
+  ],
+  "instructions": {
+    "howToAdd": "Скопируйте объект из массива referenceCards, замените данные и добавьте результаты калькуляторов",
+    "format": {
+      "name": "Имя человека",
+      "birthDate": "YYYY-MM-DD",
+      "birthTime": "HH:MM (если известно)",
+      "birthPlace": "Timezone (например, America/New_York)",
+      "latitude": "число",
+      "longitude": "число",
+      "gender": "male или female",
+      "source": "URL или источник данных",
+      "sources": [
+        {
+          "name": "Название калькулятора",
+          "pillars": ["год", "месяц", "день", "час"],
+          "structure": {
+            "type": "Follow Structure / Transformation Structure / Rare Structure / Normal Structure",
+            "subtypeRu": "Русское название подтипа",
+            "usefulElements": ["Элемент1", "Элемент2"]
+          },
+          "notes": "Дополнительные заметки"
+        }
+      ]
+    }
+  }
+}

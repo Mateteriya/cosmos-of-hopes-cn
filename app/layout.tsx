@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
+import GlobalAmuletProvider from "@/components/amulet/GlobalAmuletProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${notoSansSC.variable} antialiased`}
         style={{ fontFamily: 'var(--font-noto-sans-sc), var(--font-inter), sans-serif' }}
       >
+        <GlobalAmuletProvider />
         {children}
       </body>
     </html>

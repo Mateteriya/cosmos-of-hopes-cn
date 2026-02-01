@@ -1,0 +1,101 @@
+{
+  "animation": {
+    "stages": {
+      "chaos": {
+        "duration": 4000,
+        "description": "Хаотичное движение (мс)"
+      },
+      "toCenter": {
+        "duration": 12000,
+        "description": "Движение к центру (мс)"
+      }
+    },
+    "easing": {
+      "chaos": "quadratic",
+      "toCenter": "ease-out-2",
+      "description": "Тип плавности: linear, quadratic, cubic, ease-out-2"
+    }
+  },
+  "trajectories": {
+    "type": "spiral",
+    "description": "Тип траектории: spiral, circle, straight, chain",
+    "spiral": {
+      "turns": 2,
+      "tightness": 0.5
+    },
+    "circle": {
+      "radius": 250
+    },
+    "chain": {
+      "linkDistance": 50,
+      "flexibility": 0.3
+    }
+  },
+  "elements": {
+    "amulets": {
+      "count": 30,
+      "size": {
+        "min": 40,
+        "max": 60
+      },
+      "speed": {
+        "chaos": 0.5,
+        "toCenter": 0.3
+      },
+      "opacity": {
+        "start": 1.0,
+        "end": 0.0
+      }
+    },
+    "coloredBalls": {
+      "count": 5,
+      "size": 80,
+      "colors": [
+        {
+          "name": "fire",
+          "gradient": "rgba(255, 107, 107, 0.9), rgba(255, 50, 50, 1)"
+        },
+        {
+          "name": "wood",
+          "gradient": "rgba(81, 207, 102, 0.9), rgba(50, 180, 70, 1)"
+        },
+        {
+          "name": "water",
+          "gradient": "rgba(77, 171, 247, 0.9), rgba(50, 120, 220, 1)"
+        },
+        {
+          "name": "earth",
+          "gradient": "rgba(255, 212, 59, 0.9), rgba(220, 180, 40, 1)"
+        },
+        {
+          "name": "metal",
+          "gradient": "rgba(200, 200, 255, 0.9), rgba(150, 150, 220, 1)"
+        }
+      ]
+    }
+  },
+  "connections": {
+    "enabled": true,
+    "maxDistance": 150,
+    "lineWidth": 1,
+    "opacity": 0.3,
+    "description": "Связи между элементами (линии)"
+  },
+  "mandala": {
+    "orbits": [140, 180, 220, 260],
+    "ringCount": 3,
+    "rotationSpeed": {
+      "ring1": 0.02,
+      "ring2": -0.025,
+      "ring3": 0.03
+    },
+    "amuletSpeed": {
+      "min": 0.2,
+      "max": 0.4
+    }
+  },
+  "disappear": {
+    "distance": 80,
+    "description": "Расстояние от центра, на котором начинается исчезновение"
+  }
+}

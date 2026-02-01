@@ -2,7 +2,8 @@
  * Типы для амулетов (китайская версия)
  */
 
-export type AmuletSymbol = 'horse' | 'dragon' | 'coin' | 'phoenix';
+// Старые символы для обратной совместимости
+export type AmuletSymbol = 'horse' | 'dragon' | 'coin' | 'phoenix' | string; // string для новых символов из библиотеки
 export type BaziElement = 'fire' | 'wood' | 'water' | 'earth' | 'metal';
 
 export interface Amulet {
@@ -40,6 +41,14 @@ export interface AmuletParams {
   birth_time?: string;
   birth_place?: string;
   room_id?: string;
+  // Новые поля для уровня 2
+  symbol_id?: string; // ID символа из библиотеки
+  symbol_name?: string; // Название символа для отображения
+  material_id?: string; // ID материала
+  level?: 1 | 2; // Уровень создания (1 - незарегистрированные, 2 - зарегистрированные)
+  personalized?: boolean; // Персонализирован ли амулет
+  task?: string; // Задача амулета
+  priority_elements?: BaziElement[]; // Приоритетные элементы
 }
 
 // Цветовые палитры для каждого элемента

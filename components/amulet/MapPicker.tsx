@@ -79,6 +79,65 @@ export default function MapPicker({ onSelect, initialLat = 55.7558, initialLon =
       return 'Asia/Shanghai';
     }
     
+    // США - Восточный пояс (UTC-5/-4)
+    if (lat >= 24 && lat <= 50 && lon >= -85 && lon <= -67) {
+      // Новая Англия и Средняя Атлантика
+      if (lat >= 40 && lat <= 45 && lon >= -75 && lon <= -67) {
+        return 'America/New_York';
+      }
+      // Средний Запад (Мичиган, Иллинойс, Индиана, Огайо и др.)
+      if (lat >= 40 && lat <= 47 && lon >= -90 && lon <= -80) {
+        return 'America/Detroit'; // Используем Detroit как основной для Eastern Time
+      }
+      // Флорида, Джорджия, Южная Каролина и др.
+      if (lat >= 24 && lat <= 36 && lon >= -85 && lon <= -75) {
+        return 'America/New_York';
+      }
+      // По умолчанию для восточного региона
+      return 'America/New_York';
+    }
+    
+    // США - Центральный пояс (UTC-6/-5)
+    if (lat >= 25 && lat <= 49 && lon >= -105 && lon <= -85) {
+      // Техас, Оклахома, Арканзас, Луизиана
+      if (lat >= 25 && lat <= 36 && lon >= -106 && lon <= -90) {
+        return 'America/Chicago';
+      }
+      // Миннесота, Айова, Миссури, Висконсин
+      if (lat >= 40 && lat <= 49 && lon >= -97 && lon <= -85) {
+        return 'America/Chicago';
+      }
+      // По умолчанию для центрального региона
+      return 'America/Chicago';
+    }
+    
+    // США - Горный пояс (UTC-7/-6)
+    if (lat >= 31 && lat <= 49 && lon >= -115 && lon <= -102) {
+      return 'America/Denver';
+    }
+    
+    // США - Тихоокеанский пояс (UTC-8/-7)
+    if (lat >= 32 && lat <= 49 && lon >= -125 && lon <= -102) {
+      if (lat >= 32 && lat <= 42 && lon >= -125 && lon <= -115) {
+        return 'America/Los_Angeles';
+      }
+      // Вашингтон, Орегон, часть Айдахо
+      if (lat >= 42 && lat <= 49 && lon >= -125 && lon <= -110) {
+        return 'America/Los_Angeles';
+      }
+      return 'America/Los_Angeles';
+    }
+    
+    // Аляска (UTC-9/-8)
+    if (lat >= 51 && lat <= 72 && lon >= -180 && lon <= -130) {
+      return 'America/Anchorage';
+    }
+    
+    // Гавайи (UTC-10)
+    if (lat >= 18 && lat <= 23 && lon >= -161 && lon <= -154) {
+      return 'Pacific/Honolulu';
+    }
+    
     // Другие регионы
     if (lat >= 35 && lat <= 37 && lon >= 139 && lon <= 141) {
       return 'Asia/Tokyo';
@@ -86,13 +145,15 @@ export default function MapPicker({ onSelect, initialLat = 55.7558, initialLon =
     if (lat >= 37 && lat <= 38 && lon >= 126 && lon <= 127) {
       return 'Asia/Seoul';
     }
-    if (lat >= 40 && lat <= 41 && lon >= -74 && lon <= -73) {
-      return 'America/New_York';
-    }
     if (lat >= 51 && lat <= 52 && lon >= -1 && lon <= 0) {
       return 'Europe/London';
     }
     
+    // Если ничего не подошло, определяем по долготе (приблизительно)
+    // 15 градусов = 1 час
+    const approximateOffset = Math.round(lon / 15);
+    // Это очень грубое приближение, лучше использовать UTC и предупредить пользователя
+    console.warn(`⚠️ Не удалось определить точный часовой пояс для координат (${lat}, ${lon}). Используется UTC.`);
     return 'UTC';
   };
 
@@ -211,6 +272,23 @@ export default function MapPicker({ onSelect, initialLat = 55.7558, initialLon =
           ⏰ Определён часовой пояс: <strong>{timezone}</strong>
         </div>
       )}
+
+      <div className="bg-blue-500/20 border border-blue-400/50 rounded-xl p-3 space-y-2">
+        <p className="text-xs text-white/70">
+          🔍 Не знаете координаты вашего города?
+        </p>
+        <a
+          href="https://www.latlong.net/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-300 hover:text-blue-200 underline inline-flex items-center gap-1 transition-colors"
+        >
+          Найти координаты на latlong.net ↗
+        </a>
+        <p className="text-xs text-white/50 mt-1">
+          (Введите название города в поиск — координаты будут показаны автоматически)
+        </p>
+      </div>
       
       <button
         type="button"

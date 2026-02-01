@@ -5,19 +5,51 @@
  */
 
 import { useRouter } from 'next/navigation';
-import AmuletConstructor from '@/components/amulet/AmuletConstructor';
+import AmuletConstructorNew from '@/components/amulet/AmuletConstructorNew';
 
 export default function CreateAmuletPage() {
   const router = useRouter();
 
-  const handleSave = async () => {
-    // TODO: Реализовать сохранение амулета
-    console.log('Сохранение амулета...');
-    // После сохранения - ждём 3 секунды перед перенаправлением на главную
-    // (общая задержка: 8 секунд в анимации + 3 секунды здесь = 11 секунд, из них 5 секунд после завершения анимации)
-    setTimeout(() => {
-      router.push('/');
-    }, 3000);
+  const handleSave = async (params: any) => {
+    try {
+      // TODO: Реализовать сохранение амулета в базу данных через API
+      console.log('Сохранение амулета в общее хранилище...', params);
+      
+      // Временно сохраняем в localStorage для отображения
+      // Это будет работать до реализации полноценной БД
+      const symbolId = params.symbol_id || params.symbol || '';
+      const symbolName = params.symbol_name || params.symbol || symbolId;
+      
+      const amuletForStorage = {
+        symbol: symbolId,
+        symbolName: symbolName,
+        symbolId: symbolId,
+        color: params.color || '#DC2626',
+        wishText: params.wish_text || '',
+      };
+      
+      localStorage.setItem('lastSentAmulet', JSON.stringify(amuletForStorage));
+      
+      // Отправляем кастомное событие для обновления компонентов в той же вкладке
+      window.dispatchEvent(new CustomEvent('amuletUpdated'));
+      
+      // Также отправляем storage event для синхронизации между вкладками
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'lastSentAmulet',
+        newValue: JSON.stringify(amuletForStorage),
+      }));
+      
+      // После реализации БД здесь будет вызов API:
+      // const response = await fetch('/api/amulet/save', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(params),
+      // });
+      
+    } catch (error) {
+      console.error('Ошибка сохранения амулета:', error);
+      throw error;
+    }
   };
 
   return (
@@ -33,8 +65,10 @@ export default function CreateAmuletPage() {
         </svg>
       </button>
 
+      {/* Кнопка профиля (если зарегистрирован) - не добавляем здесь, так как GlobalAmuletProvider не показывается на /create */}
+
       <div className="max-w-4xl mx-auto pt-4">
-        <AmuletConstructor onSave={handleSave} />
+        <AmuletConstructorNew onSave={handleSave} />
       </div>
     </div>
   );

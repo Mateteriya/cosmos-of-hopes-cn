@@ -1,0 +1,491 @@
+{
+  "города": [
+    {
+      "name": "Оренбург",
+      "name_en": "Orenburg",
+      "lat": "51.7682",
+      "lon": "55.0969",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Оренбургская область",
+      "population": 564443
+    },
+    {
+      "name": "Москва",
+      "name_en": "Moscow",
+      "lat": "55.7558",
+      "lon": "37.6173",
+      "timezone": "Europe/Moscow",
+      "region": "Москва",
+      "population": 12615279
+    },
+    {
+      "name": "Санкт-Петербург",
+      "name_en": "Saint Petersburg",
+      "lat": "59.9343",
+      "lon": "30.3351",
+      "timezone": "Europe/Moscow",
+      "region": "Санкт-Петербург",
+      "population": 5384342
+    },
+    {
+      "name": "Новосибирск",
+      "name_en": "Novosibirsk",
+      "lat": "55.0084",
+      "lon": "82.9357",
+      "timezone": "Asia/Novosibirsk",
+      "region": "Новосибирская область",
+      "population": 1625631
+    },
+    {
+      "name": "Екатеринбург",
+      "name_en": "Yekaterinburg",
+      "lat": "56.8431",
+      "lon": "60.6454",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Свердловская область",
+      "population": 1493749
+    },
+    {
+      "name": "Казань",
+      "name_en": "Kazan",
+      "lat": "55.8304",
+      "lon": "49.0661",
+      "timezone": "Europe/Moscow",
+      "region": "Республика Татарстан",
+      "population": 1257391
+    },
+    {
+      "name": "Нижний Новгород",
+      "name_en": "Nizhny Novgorod",
+      "lat": "56.2965",
+      "lon": "43.9361",
+      "timezone": "Europe/Moscow",
+      "region": "Нижегородская область",
+      "population": 1252236
+    },
+    {
+      "name": "Челябинск",
+      "name_en": "Chelyabinsk",
+      "lat": "55.1644",
+      "lon": "61.4368",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Челябинская область",
+      "population": 1202371
+    },
+    {
+      "name": "Самара",
+      "name_en": "Samara",
+      "lat": "53.2001",
+      "lon": "50.15",
+      "timezone": "Europe/Samara",
+      "region": "Самарская область",
+      "population": 1173299
+    },
+    {
+      "name": "Омск",
+      "name_en": "Omsk",
+      "lat": "54.9885",
+      "lon": "73.3242",
+      "timezone": "Asia/Omsk",
+      "region": "Омская область",
+      "population": 1172079
+    },
+    {
+      "name": "Ростов-на-Дону",
+      "name_en": "Rostov-on-Don",
+      "lat": "47.2357",
+      "lon": "39.7015",
+      "timezone": "Europe/Moscow",
+      "region": "Ростовская область",
+      "population": 1137704
+    },
+    {
+      "name": "Уфа",
+      "name_en": "Ufa",
+      "lat": "54.7348",
+      "lon": "55.9578",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Республика Башкортостан",
+      "population": 1144809
+    },
+    {
+      "name": "Красноярск",
+      "name_en": "Krasnoyarsk",
+      "lat": "56.0184",
+      "lon": "92.8672",
+      "timezone": "Asia/Krasnoyarsk",
+      "region": "Красноярский край",
+      "population": 1091951
+    },
+    {
+      "name": "Воронеж",
+      "name_en": "Voronezh",
+      "lat": "51.6720",
+      "lon": "39.1843",
+      "timezone": "Europe/Moscow",
+      "region": "Воронежская область",
+      "population": 1057681
+    },
+    {
+      "name": "Пермь",
+      "name_en": "Perm",
+      "lat": "58.0105",
+      "lon": "56.2502",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Пермский край",
+      "population": 1053938
+    },
+    {
+      "name": "Волгоград",
+      "name_en": "Volgograd",
+      "lat": "48.7194",
+      "lon": "44.5018",
+      "timezone": "Europe/Volgograd",
+      "region": "Волгоградская область",
+      "population": 1015586
+    },
+    {
+      "name": "Краснодар",
+      "name_en": "Krasnodar",
+      "lat": "45.0355",
+      "lon": "38.9753",
+      "timezone": "Europe/Moscow",
+      "region": "Краснодарский край",
+      "population": 1099344
+    },
+    {
+      "name": "Саратов",
+      "name_en": "Saratov",
+      "lat": "51.5336",
+      "lon": "46.0342",
+      "timezone": "Europe/Saratov",
+      "region": "Саратовская область",
+      "population": 845300
+    },
+    {
+      "name": "Тюмень",
+      "name_en": "Tyumen",
+      "lat": "57.1522",
+      "lon": "65.5272",
+      "timezone": "Asia/Yekaterinburg",
+      "region": "Тюменская область",
+      "population": 816800
+    },
+    {
+      "name": "Тольятти",
+      "name_en": "Tolyatti",
+      "lat": "53.5303",
+      "lon": "49.3461",
+      "timezone": "Europe/Samara",
+      "region": "Самарская область",
+      "population": 707408
+    },
+    {
+      "name": "Ижевск",
+      "name_en": "Izhevsk",
+      "lat": "56.8528",
+      "lon": "53.2115",
+      "timezone": "Europe/Samara",
+      "region": "Удмуртская Республика",
+      "population": 646277
+    },
+    {
+      "name": "Барнаул",
+      "name_en": "Barnaul",
+      "lat": "53.3606",
+      "lon": "83.7636",
+      "timezone": "Asia/Barnaul",
+      "region": "Алтайский край",
+      "population": 630877
+    },
+    {
+      "name": "Ульяновск",
+      "name_en": "Ulyanovsk",
+      "lat": "54.3142",
+      "lon": "48.4031",
+      "timezone": "Europe/Ulyanovsk",
+      "region": "Ульяновская область",
+      "population": 624518
+    },
+    {
+      "name": "Иркутск",
+      "name_en": "Irkutsk",
+      "lat": "52.2864",
+      "lon": "104.2807",
+      "timezone": "Asia/Irkutsk",
+      "region": "Иркутская область",
+      "population": 617264
+    },
+    {
+      "name": "Хабаровск",
+      "name_en": "Khabarovsk",
+      "lat": "48.4802",
+      "lon": "135.0719",
+      "timezone": "Asia/Vladivostok",
+      "region": "Хабаровский край",
+      "population": 616242
+    },
+    {
+      "name": "Ярославль",
+      "name_en": "Yaroslavl",
+      "lat": "57.6266",
+      "lon": "39.8938",
+      "timezone": "Europe/Moscow",
+      "region": "Ярославская область",
+      "population": 608353
+    },
+    {
+      "name": "Владивосток",
+      "name_en": "Vladivostok",
+      "lat": "43.1056",
+      "lon": "131.8735",
+      "timezone": "Asia/Vladivostok",
+      "region": "Приморский край",
+      "population": 606561
+    },
+    {
+      "name": "Махачкала",
+      "name_en": "Makhachkala",
+      "lat": "42.9849",
+      "lon": "47.5047",
+      "timezone": "Europe/Moscow",
+      "region": "Республика Дагестан",
+      "population": 604266
+    },
+    {
+      "name": "Томск",
+      "name_en": "Tomsk",
+      "lat": "56.4846",
+      "lon": "84.9482",
+      "timezone": "Asia/Tomsk",
+      "region": "Томская область",
+      "population": 572740
+    },
+    {
+      "name": "Кемерово",
+      "name_en": "Kemerovo",
+      "lat": "55.3543",
+      "lon": "86.0883",
+      "timezone": "Asia/Krasnoyarsk",
+      "region": "Кемеровская область",
+      "population": 558973
+    },
+    {
+      "name": "Новокузнецк",
+      "name_en": "Novokuznetsk",
+      "lat": "53.7596",
+      "lon": "87.1216",
+      "timezone": "Asia/Krasnoyarsk",
+      "region": "Кемеровская область",
+      "population": 552445
+    },
+    {
+      "name": "Рязань",
+      "name_en": "Ryazan",
+      "lat": "54.6269",
+      "lon": "39.6916",
+      "timezone": "Europe/Moscow",
+      "region": "Рязанская область",
+      "population": 539789
+    },
+    {
+      "name": "Астрахань",
+      "name_en": "Astrakhan",
+      "lat": "46.3497",
+      "lon": "48.0408",
+      "timezone": "Europe/Astrakhan",
+      "region": "Астраханская область",
+      "population": 533925
+    },
+    {
+      "name": "Набережные Челны",
+      "name_en": "Naberezhnye Chelny",
+      "lat": "55.7436",
+      "lon": "52.3955",
+      "timezone": "Europe/Moscow",
+      "region": "Республика Татарстан",
+      "population": 533839
+    },
+    {
+      "name": "Пенза",
+      "name_en": "Penza",
+      "lat": "53.2001",
+      "lon": "45.0046",
+      "timezone": "Europe/Moscow",
+      "region": "Пензенская область",
+      "population": 519992
+    },
+    {
+      "name": "Киров",
+      "name_en": "Kirov",
+      "lat": "58.6036",
+      "lon": "49.6680",
+      "timezone": "Europe/Kirov",
+      "region": "Кировская область",
+      "population": 518348
+    },
+    {
+      "name": "Чебоксары",
+      "name_en": "Cheboksary",
+      "lat": "56.1322",
+      "lon": "47.2519",
+      "timezone": "Europe/Moscow",
+      "region": "Чувашская Республика",
+      "population": 496807
+    },
+    {
+      "name": "Калининград",
+      "name_en": "Kaliningrad",
+      "lat": "54.7104",
+      "lon": "20.4522",
+      "timezone": "Europe/Kaliningrad",
+      "region": "Калининградская область",
+      "population": 493256
+    },
+    {
+      "name": "Тула",
+      "name_en": "Tula",
+      "lat": "54.1931",
+      "lon": "37.6173",
+      "timezone": "Europe/Moscow",
+      "region": "Тульская область",
+      "population": 473622
+    },
+    {
+      "name": "Курск",
+      "name_en": "Kursk",
+      "lat": "51.7373",
+      "lon": "36.1873",
+      "timezone": "Europe/Moscow",
+      "region": "Курская область",
+      "population": 450977
+    },
+    {
+      "name": "Сочи",
+      "name_en": "Sochi",
+      "lat": "43.6028",
+      "lon": "39.7342",
+      "timezone": "Europe/Moscow",
+      "region": "Краснодарский край",
+      "population": 443562
+    },
+    {
+      "name": "Ставрополь",
+      "name_en": "Stavropol",
+      "lat": "45.0445",
+      "lon": "41.9690",
+      "timezone": "Europe/Moscow",
+      "region": "Ставропольский край",
+      "population": 450680
+    },
+    {
+      "name": "Улан-Удэ",
+      "name_en": "Ulan-Ude",
+      "lat": "51.8272",
+      "lon": "107.6063",
+      "timezone": "Asia/Irkutsk",
+      "region": "Республика Бурятия",
+      "population": 437565
+    },
+    {
+      "name": "Белгород",
+      "name_en": "Belgorod",
+      "lat": "50.5957",
+      "lon": "36.5873",
+      "timezone": "Europe/Moscow",
+      "region": "Белгородская область",
+      "population": 391554
+    },
+    {
+      "name": "Архангельск",
+      "name_en": "Arkhangelsk",
+      "lat": "64.5393",
+      "lon": "40.5187",
+      "timezone": "Europe/Moscow",
+      "region": "Архангельская область",
+      "population": 351488
+    },
+    {
+      "name": "Владимир",
+      "name_en": "Vladimir",
+      "lat": "56.1296",
+      "lon": "40.4066",
+      "timezone": "Europe/Moscow",
+      "region": "Владимирская область",
+      "population": 352347
+    },
+    {
+      "name": "Севастополь",
+      "name_en": "Sevastopol",
+      "lat": "44.6166",
+      "lon": "33.5254",
+      "timezone": "Europe/Simferopol",
+      "region": "Севастополь",
+      "population": 522057
+    },
+    {
+      "name": "Чита",
+      "name_en": "Chita",
+      "lat": "52.0339",
+      "lon": "113.4994",
+      "timezone": "Asia/Chita",
+      "region": "Забайкальский край",
+      "population": 347088
+    },
+    {
+      "name": "Смоленск",
+      "name_en": "Smolensk",
+      "lat": "54.7818",
+      "lon": "32.0401",
+      "timezone": "Europe/Moscow",
+      "region": "Смоленская область",
+      "population": 320170
+    },
+    {
+      "name": "Калуга",
+      "name_en": "Kaluga",
+      "lat": "54.5293",
+      "lon": "36.2754",
+      "timezone": "Europe/Moscow",
+      "region": "Калужская область",
+      "population": 337058
+    },
+    {
+      "name": "Череповец",
+      "name_en": "Cherepovets",
+      "lat": "59.2000",
+      "lon": "37.9000",
+      "timezone": "Europe/Moscow",
+      "region": "Вологодская область",
+      "population": 318856
+    },
+    {
+      "name": "Орёл",
+      "name_en": "Oryol",
+      "lat": "52.9703",
+      "lon": "36.0635",
+      "timezone": "Europe/Moscow",
+      "region": "Орловская область",
+      "population": 303696
+    },
+    {
+      "name": "Волжский",
+      "name_en": "Volzhsky",
+      "lat": "48.7858",
+      "lon": "44.7794",
+      "timezone": "Europe/Volgograd",
+      "region": "Волгоградская область",
+      "population": 326055
+    },
+    {
+      "name": "Черноголовка",
+      "name_en": "Chernogolovka",
+      "lat": "55.9139",
+      "lon": "38.3803",
+      "timezone": "Europe/Moscow",
+      "region": "Московская область",
+      "population": 21219
+    }
+  ]
+}
+

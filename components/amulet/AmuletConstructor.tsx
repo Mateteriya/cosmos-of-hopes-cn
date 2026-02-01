@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import type { AmuletParams, AmuletSymbol, BaziElement } from '@/types/amulet';
 import { ELEMENT_COLORS, AMULET_SYMBOLS, BAZI_ELEMENTS } from '@/types/amulet';
+import { AmuletSymbolIcon, AmuletSymbolIconWithChoice } from './AmuletSymbolIcons';
 import MagicAmuletTransformation from './MagicAmuletTransformation';
 import BaziForm from './BaziForm';
 import BaziResults from './BaziResults';
@@ -159,6 +160,9 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
   
   // Состояние загрузки
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Для выбора между двумя картинками весов
+  const [scalesImageIndex, setScalesImageIndex] = useState(0);
   
   // Состояние магического превращения
   const [showMagicTransformation, setShowMagicTransformation] = useState(false);
@@ -343,7 +347,18 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
                     : 'border-white/20 bg-white/5 hover:bg-white/10'
                 }`}
               >
-                <div className="text-5xl mb-2">{sym.icon}</div>
+                <div className="flex items-center justify-center mb-2" style={{ height: '64px' }}>
+                  {sym.value === 'scales' ? (
+                    <AmuletSymbolIconWithChoice
+                      symbolId={sym.value}
+                      size={64}
+                      selectedImageIndex={scalesImageIndex}
+                      onImageChange={setScalesImageIndex}
+                    />
+                  ) : (
+                    <AmuletSymbolIcon symbolId={sym.value} size={64} />
+                  )}
+                </div>
                 <div className="text-white font-semibold">{sym.label}</div>
                 <div className="text-white/60 text-xs mt-1">{sym.description}</div>
               </button>
@@ -407,14 +422,23 @@ export default function AmuletConstructor({ onSave }: AmuletConstructorProps) {
             {/* Амулет с эффектом свечения */}
             <div className="relative">
               <div
-                className="w-40 h-40 rounded-full flex items-center justify-center text-7xl shadow-2xl border-4 animate-pulse"
+                className="w-40 h-40 rounded-full flex items-center justify-center shadow-2xl border-4 animate-pulse"
                 style={{ 
                   backgroundColor: color,
                   borderColor: `${color}CC`,
                   boxShadow: `0 0 40px ${color}80, 0 0 80px ${color}40`,
                 }}
               >
-                {AMULET_SYMBOLS.find(s => s.value === symbol)?.icon}
+                {symbol === 'scales' ? (
+                  <AmuletSymbolIconWithChoice
+                    symbolId={symbol}
+                    size={96}
+                    selectedImageIndex={scalesImageIndex}
+                    onImageChange={setScalesImageIndex}
+                  />
+                ) : (
+                  <AmuletSymbolIcon symbolId={symbol || ''} size={96} />
+                )}
               </div>
               {/* Дополнительное свечение */}
               <div

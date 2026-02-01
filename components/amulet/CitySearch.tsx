@@ -1,6 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import russianCitiesData from '@/lib/cities/russian-cities.json';
+
+const russianCities = russianCitiesData as { города: Array<{
+  name: string;
+  name_en: string;
+  lat: string;
+  lon: string;
+  timezone: string;
+  region: string;
+  population: number;
+}> };
 
 interface CityOption {
   display_name: string;
@@ -50,13 +61,12 @@ const POPULAR_CITIES: Record<string, CityOption> = {
   '台北': { display_name: '台北, 台湾', lat: '25.0330', lon: '121.5654', timezone: 'Asia/Taipei' },
   'taipei': { display_name: 'Taipei, Taiwan', lat: '25.0330', lon: '121.5654', timezone: 'Asia/Taipei' },
   
-  // Российские города (для удобства)
+  // Российские города (для удобства) - теперь основная база в russian-cities.json
   'москва': { display_name: 'Москва, Россия', lat: '55.7558', lon: '37.6173', timezone: 'Europe/Moscow' },
   'moscow': { display_name: 'Moscow, Russia', lat: '55.7558', lon: '37.6173', timezone: 'Europe/Moscow' },
   'санкт-петербург': { display_name: 'Санкт-Петербург, Россия', lat: '59.9343', lon: '30.3351', timezone: 'Europe/Moscow' },
-  'черноголовка': { display_name: 'Черноголовка, Московская область, Россия', lat: '55.9139', lon: '38.3803', timezone: 'Europe/Moscow' },
-  'череповец': { display_name: 'Череповец, Вологодская область, Россия', lat: '59.2000', lon: '37.9000', timezone: 'Europe/Moscow' },
-  'чебоксары': { display_name: 'Чебоксары, Чувашская Республика, Россия', lat: '56.1322', lon: '47.2519', timezone: 'Europe/Moscow' }
+  'оренбург': { display_name: 'Оренбург, Оренбургская область, Россия', lat: '51.7682', lon: '55.0969', timezone: 'Asia/Yekaterinburg' },
+  'orenburg': { display_name: 'Orenburg, Russia', lat: '51.7682', lon: '55.0969', timezone: 'Asia/Yekaterinburg' }
 };
 
 export default function CitySearch({ value, onChange, placeholder = "Введите название города..." }: CitySearchProps) {
@@ -98,6 +108,65 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       return 'Asia/Shanghai';
     }
     
+    // США - Восточный пояс (UTC-5/-4)
+    if (lat >= 24 && lat <= 50 && lon >= -85 && lon <= -67) {
+      // Новая Англия и Средняя Атлантика
+      if (lat >= 40 && lat <= 45 && lon >= -75 && lon <= -67) {
+        return 'America/New_York';
+      }
+      // Средний Запад (Мичиган, Иллинойс, Индиана, Огайо и др.)
+      if (lat >= 40 && lat <= 47 && lon >= -90 && lon <= -80) {
+        return 'America/Detroit'; // Используем Detroit как основной для Eastern Time
+      }
+      // Флорида, Джорджия, Южная Каролина и др.
+      if (lat >= 24 && lat <= 36 && lon >= -85 && lon <= -75) {
+        return 'America/New_York';
+      }
+      // По умолчанию для восточного региона
+      return 'America/New_York';
+    }
+    
+    // США - Центральный пояс (UTC-6/-5)
+    if (lat >= 25 && lat <= 49 && lon >= -105 && lon <= -85) {
+      // Техас, Оклахома, Арканзас, Луизиана
+      if (lat >= 25 && lat <= 36 && lon >= -106 && lon <= -90) {
+        return 'America/Chicago';
+      }
+      // Миннесота, Айова, Миссури, Висконсин
+      if (lat >= 40 && lat <= 49 && lon >= -97 && lon <= -85) {
+        return 'America/Chicago';
+      }
+      // По умолчанию для центрального региона
+      return 'America/Chicago';
+    }
+    
+    // США - Горный пояс (UTC-7/-6)
+    if (lat >= 31 && lat <= 49 && lon >= -115 && lon <= -102) {
+      return 'America/Denver';
+    }
+    
+    // США - Тихоокеанский пояс (UTC-8/-7)
+    if (lat >= 32 && lat <= 49 && lon >= -125 && lon <= -102) {
+      if (lat >= 32 && lat <= 42 && lon >= -125 && lon <= -115) {
+        return 'America/Los_Angeles';
+      }
+      // Вашингтон, Орегон, часть Айдахо
+      if (lat >= 42 && lat <= 49 && lon >= -125 && lon <= -110) {
+        return 'America/Los_Angeles';
+      }
+      return 'America/Los_Angeles';
+    }
+    
+    // Аляска (UTC-9/-8)
+    if (lat >= 51 && lat <= 72 && lon >= -180 && lon <= -130) {
+      return 'America/Anchorage';
+    }
+    
+    // Гавайи (UTC-10)
+    if (lat >= 18 && lat <= 23 && lon >= -161 && lon <= -154) {
+      return 'Pacific/Honolulu';
+    }
+    
     // Другие регионы
     if (lat >= 35 && lat <= 37 && lon >= 139 && lon <= 141) {
       return 'Asia/Tokyo';
@@ -105,14 +174,57 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
     if (lat >= 37 && lat <= 38 && lon >= 126 && lon <= 127) {
       return 'Asia/Seoul';
     }
-    if (lat >= 40 && lat <= 41 && lon >= -74 && lon <= -73) {
-      return 'America/New_York';
-    }
     if (lat >= 51 && lat <= 52 && lon >= -1 && lon <= 0) {
       return 'Europe/London';
     }
     
+    // Если ничего не подошло, определяем по долготе (приблизительно)
+    // 15 градусов = 1 час
+    const approximateOffset = Math.round(lon / 15);
+    // Это очень грубое приближение, лучше использовать UTC и предупредить пользователя
+    console.warn(`⚠️ Не удалось определить точный часовой пояс для координат (${lat}, ${lon}). Используется UTC.`);
     return 'UTC';
+  };
+
+  // Поиск в локальной базе российских городов
+  const searchRussianCities = (query: string): CityOption[] => {
+    const queryLower = query.trim().toLowerCase();
+    const results: CityOption[] = [];
+    
+    for (const city of russianCities.города) {
+      const nameLower = city.name.toLowerCase();
+      const nameEnLower = city.name_en.toLowerCase();
+      
+      // Точное совпадение
+      if (nameLower === queryLower || nameEnLower === queryLower) {
+        results.unshift({
+          display_name: `${city.name}, ${city.region}, Россия`,
+          lat: city.lat,
+          lon: city.lon,
+          timezone: city.timezone
+        });
+      }
+      // Начинается с запроса
+      else if (nameLower.startsWith(queryLower) || nameEnLower.startsWith(queryLower)) {
+        results.push({
+          display_name: `${city.name}, ${city.region}, Россия`,
+          lat: city.lat,
+          lon: city.lon,
+          timezone: city.timezone
+        });
+      }
+      // Содержит запрос
+      else if (queryLower.length >= 3 && (nameLower.includes(queryLower) || nameEnLower.includes(queryLower))) {
+        results.push({
+          display_name: `${city.name}, ${city.region}, Россия`,
+          lat: city.lat,
+          lon: city.lon,
+          timezone: city.timezone
+        });
+      }
+    }
+    
+    return results.slice(0, 20); // Ограничиваем 20 результатами
   };
 
   // Поиск городов через Nominatim API (OpenStreetMap) - бесплатно, работает везде
@@ -125,10 +237,10 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
 
     setIsSearching(true);
     
-    // Сначала проверяем кэш популярных городов
     const queryLower = query.trim().toLowerCase();
-    const cachedCity = POPULAR_CITIES[queryLower];
     
+    // 1. Сначала проверяем кэш популярных городов
+    const cachedCity = POPULAR_CITIES[queryLower];
     if (cachedCity) {
       setResults([cachedCity]);
       setShowResults(true);
@@ -136,7 +248,16 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       return;
     }
     
-    // Проверяем частичные совпадения в кэше
+    // 2. Проверяем локальную базу российских городов (приоритет!)
+    const russianResults = searchRussianCities(query);
+    if (russianResults.length > 0) {
+      setResults(russianResults);
+      setShowResults(true);
+      setIsSearching(false);
+      return; // Если нашли в локальной базе, не обращаемся к API
+    }
+    
+    // 3. Проверяем частичные совпадения в кэше популярных
     const cachedMatches = Object.entries(POPULAR_CITIES)
       .filter(([key]) => key.startsWith(queryLower) && queryLower.length >= 3)
       .map(([, value]) => value);
@@ -145,6 +266,7 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       setResults(cachedMatches);
       setShowResults(true);
       setIsSearching(false);
+      return;
     }
     
     try {
@@ -259,7 +381,8 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
         };
       });
 
-      const allResults = [...cachedMatches, ...resultsWithTimezone];
+      // Объединяем результаты: сначала российские города из локальной базы, потом из API
+      const allResults = [...russianResults, ...cachedMatches, ...resultsWithTimezone];
       const uniqueResults = allResults.filter((item, index, self) =>
         index === self.findIndex((t) => t.lat === item.lat && t.lon === item.lon)
       );
@@ -268,8 +391,10 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       setShowResults(true);
     } catch (error) {
       console.error('City search error:', error);
-      setResults(cachedMatches.length > 0 ? cachedMatches : []);
-      setShowResults(cachedMatches.length > 0);
+      // При ошибке API показываем результаты из локальной базы
+      const fallbackResults = russianResults.length > 0 ? russianResults : cachedMatches;
+      setResults(fallbackResults);
+      setShowResults(fallbackResults.length > 0);
     } finally {
       setIsSearching(false);
     }
@@ -306,6 +431,14 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       parseFloat(city.lon),
       city.timezone
     );
+  };
+
+  // Очистка поля ввода
+  const handleClear = () => {
+    setSearchQuery('');
+    setResults([]);
+    setShowResults(false);
+    onChange('', undefined, undefined, undefined);
   };
 
   // Обработка клавиатуры
@@ -346,9 +479,14 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
           </div>
         )}
         {!isSearching && searchQuery && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 text-sm">
-            ✓
-          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/90 transition-colors p-1"
+            title="Очистить поле"
+          >
+            ✕
+          </button>
         )}
       </div>
 
@@ -377,8 +515,16 @@ export default function CitySearch({ value, onChange, placeholder = "Введи�
       )}
 
       {showResults && results.length === 0 && searchQuery.length >= 2 && !isSearching && (
-        <div className="absolute z-50 w-full mt-2 bg-gray-900/95 backdrop-blur-lg border-2 border-white/20 rounded-2xl shadow-2xl p-4 text-white/60 text-center">
-          Город не найден. Попробуйте ввести координаты вручную или выбрать на карте.
+        <div className="absolute z-50 w-full mt-2 bg-gray-900/95 backdrop-blur-lg border-2 border-white/20 rounded-2xl shadow-2xl p-4 text-white/80">
+          <div className="text-center mb-2">
+            <span className="text-lg">📍</span>
+          </div>
+          <p className="text-sm text-center mb-3">
+            Город не найден в списке.
+          </p>
+          <p className="text-xs text-center text-white/70">
+            Если Вы не нашли Ваш город рождения в списке, пожалуйста, воспользуйтесь интерактивной картой или введите координаты вручную.
+          </p>
         </div>
       )}
     </div>
