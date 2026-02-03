@@ -1,8 +1,51 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+
+// Текстура шестерёнок для внешних стен
+function useGearsTexture() {
+  return useMemo(() => {
+    const w = 128;
+    const h = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(0, 0, w, h);
+    const drawGear = (cx: number, cy: number, r: number, teeth: number) => {
+      ctx.strokeStyle = 'rgba(60,95,140,0.85)';
+      ctx.lineWidth = 2.5;
+      const step = (Math.PI * 2) / teeth;
+      for (let i = 0; i < teeth; i++) {
+        const a1 = i * step - step * 0.35;
+        const a2 = i * step;
+        const a3 = i * step + step * 0.35;
+        const rOut = r;
+        const rIn = r * 0.82;
+        ctx.beginPath();
+        ctx.moveTo(cx + rIn * Math.cos(a1), cy + rIn * Math.sin(a1));
+        ctx.lineTo(cx + rOut * Math.cos(a2), cy + rOut * Math.sin(a2));
+        ctx.lineTo(cx + rIn * Math.cos(a3), cy + rIn * Math.sin(a3));
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
+      ctx.stroke();
+    };
+    drawGear(32, 32, 14, 10);
+    drawGear(96, 96, 12, 8);
+    drawGear(96, 32, 10, 6);
+    drawGear(32, 96, 10, 6);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+}
 
 interface RegretRecyclingStationProps {
   position: [number, number, number];
@@ -40,6 +83,7 @@ export default function RegretRecyclingStation({
 
   const auraMargin = 0.02;
   const auraOverhang = 0.02;
+  const gearsTexture = useGearsTexture();
 
   useFrame((state) => {
     if (!coreRef.current) return;
@@ -113,10 +157,11 @@ export default function RegretRecyclingStation({
         />
       </mesh>
 
-      {/* Основной объём */}
+      {/* Основной объём — стены с рисунками шестерёнок */}
       <mesh position={[0, buildingCenterY, 0]}>
         <boxGeometry args={[baseWidth, baseHeight - foundationHeight, baseDepth]} />
         <meshStandardMaterial
+          map={gearsTexture}
           color={primaryColor}
           emissive={glowColor}
           emissiveIntensity={active ? 0.3 : 0.15}
