@@ -183,6 +183,12 @@ export default function CalmPowerStation({
   const streamWidth = STREAM_WIDTH;
   const landZ = hd + gap + streamWidth + 0.15;
 
+  // Аура: стены и верхняя часть крыши
+  const auraMargin = 0.018;
+  const auraOverhang = 0.025;
+  const auraColor = new THREE.Color(0x9a8ec8); // мягкий лавандово-голубой для стен
+  const auraRoofColor = new THREE.Color(0x87ceeb); // голубая для крыши
+
   // Цвета экстерьера: спокойный голубой, ярко-синяя крыша
   const exteriorPearl = new THREE.Color(0x9ac0db); // мягкий спокойный голубой
   const exteriorGolden = new THREE.Color(0x1e90ff); // ярко-синий (dodger blue) — крыша, фундамент
@@ -2425,6 +2431,21 @@ export default function CalmPowerStation({
 
       {/* Здание (парение) — парящая часть мостика синхронно с зданием */}
       <group ref={floatRef}>
+        {/* Аура — только вокруг стен здания (без крыши и фундамента) */}
+        <mesh position={[0, buildingCenterY, 0]} renderOrder={-3}>
+          <boxGeometry args={[baseWidth + auraOverhang * 2, (baseHeight - foundationHeight) + auraMargin, baseDepth + auraOverhang * 2]} />
+          <meshBasicMaterial color={auraColor} transparent opacity={active ? 0.07 : 0.03} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+        {/* Аура — только на верхнюю часть крыши, голубая */}
+        <mesh position={[0, roofY, 0]} renderOrder={-3}>
+          <boxGeometry args={[baseWidth * 1.02 + auraOverhang * 2, 0.08 + auraMargin, baseDepth * 1.02 + auraOverhang * 2]} />
+          <meshBasicMaterial color={auraRoofColor} transparent opacity={active ? 0.08 : 0.04} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+        {/* Аура — только на фундамент */}
+        <mesh position={[0, foundationCenterY, 0]} renderOrder={-3}>
+          <boxGeometry args={[baseWidth * 1.06 + auraOverhang * 2, foundationHeight + auraMargin, baseDepth * 1.06 + auraOverhang * 2]} />
+          <meshBasicMaterial color={auraColor} transparent opacity={active ? 0.07 : 0.03} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
         {/* Мостик парящая часть — от середины к порогу проёма; DoubleSide чтобы изнутри здания был виден целиком */}
         <mesh ref={bridgeFloatingRef} geometry={bridgeFloatingGeometry} renderOrder={5}>
           <meshStandardMaterial
