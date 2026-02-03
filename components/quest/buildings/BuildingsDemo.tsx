@@ -8,6 +8,40 @@ import BuildingFactory from './BuildingFactory';
 import { buildingConfigs } from '@/lib/buildingConfigs';
 import PurplePlanet from './PurplePlanet';
 
+type Vec3 = [number, number, number];
+
+/** Сцена с целью орбиты, заданной снаружи */
+function SceneContent({
+  buildings,
+  orbitTarget,
+}: {
+  buildings: Building[];
+  orbitTarget: Vec3;
+}) {
+  return (
+    <>
+      <PerspectiveCamera makeDefault position={[5, 5, 5]} fov={50} />
+      <OrbitControls
+        target={orbitTarget}
+        enableDamping
+        dampingFactor={0.05}
+        minDistance={0.05}
+        maxDistance={80}
+        enablePan
+        enableZoom
+      />
+      <ambientLight intensity={0.5} />
+      <pointLight position={[10, 10, 10]} intensity={1} />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} />
+      <Grid args={[20, 20]} cellColor="#6f6f6f" sectionColor="#9d4b4b" />
+      {buildings.map((building) => (
+        <BuildingFactory key={building.id} building={building} />
+      ))}
+      <PurplePlanet position={[8, 6, 8]} scale={1.2} rotationSpeed={0.08} />
+    </>
+  );
+}
+
 /**
  * Демо-компонент для тестирования 3D-моделей зданий
  */
@@ -34,6 +68,9 @@ export default function BuildingsDemo() {
       connections: [],
     },
   ]);
+
+  /** Цель орбиты: при выборе здания — его центр, иначе центр сетки */
+  const [orbitTarget, setOrbitTarget] = useState<Vec3>([0, 0, 0]);
 
   const addBuilding = (type: BuildingType) => {
     const config = buildingConfigs[type];
@@ -105,84 +142,40 @@ export default function BuildingsDemo() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col">
-      {/* Панель управления */}
-      <div className="p-4 bg-gray-900 text-white">
-        <h1 className="text-2xl font-bold mb-4">3D Модели Зданий - Демо</h1>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => addBuilding('маяк')}
-            className="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600"
-          >
-            Маяк (Башня Фокуса)
-          </button>
-          <button
-            onClick={() => addBuilding('skills_library')}
-            className="px-4 py-2 bg-purple-500 rounded hover:bg-purple-600"
-          >
-            Библиотека Навыков
-          </button>
-          <button
-            onClick={() => addBuilding('prototyping_lab')}
-            className="px-4 py-2 bg-indigo-500 rounded hover:bg-indigo-600"
-          >
-            Лаборатория Прототипирования
-          </button>
-          <button
-            onClick={() => addBuilding('observatory')}
-            className="px-4 py-2 bg-teal-500 rounded hover:bg-teal-600"
-          >
-            Обсерватория
-          </button>
-          <button
-            onClick={() => addBuilding('data_core')}
-            className="px-4 py-2 bg-cyan-500 rounded hover:bg-cyan-600"
-          >
-            Ядро Данных
-          </button>
-          <button
-            onClick={() => addBuilding('calm_power_station')}
-            className="px-4 py-2 bg-pink-500 rounded hover:bg-pink-600"
-          >
-            Электростанция Спокойствия
-          </button>
-          <button
-            onClick={() => addBuilding('regret_recycling_station')}
-            className="px-4 py-2 bg-sky-500 rounded hover:bg-sky-600"
-          >
-            Станция Переработки Сожалений
-          </button>
+    <div className="w-full h-screen flex">
+      {/* Панель управления — слева, компактные кнопки */}
+      <div className="w-52 shrink-0 flex flex-col gap-2 p-3 bg-gray-900/95 text-white border-r border-gray-700 overflow-y-auto">
+        <h2 className="text-sm font-semibold text-gray-300 mb-1">Добавить здание</h2>
+        <div className="flex flex-col gap-1.5">
+          <button onClick={() => addBuilding('маяк')} className="px-2 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 rounded truncate" title="Маяк (Башня Фокуса)">Маяк</button>
+          <button onClick={() => addBuilding('skills_library')} className="px-2 py-1.5 text-xs bg-purple-600 hover:bg-purple-500 rounded truncate" title="Библиотека Навыков">Библиотека</button>
+          <button onClick={() => addBuilding('prototyping_lab')} className="px-2 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 rounded truncate" title="Лаборатория Прототипирования">Лаб. прототипов</button>
+          <button onClick={() => addBuilding('observatory')} className="px-2 py-1.5 text-xs bg-teal-600 hover:bg-teal-500 rounded truncate" title="Обсерватория">Обсерватория</button>
+          <button onClick={() => addBuilding('data_core')} className="px-2 py-1.5 text-xs bg-cyan-600 hover:bg-cyan-500 rounded truncate" title="Ядро Данных">Ядро данных</button>
+          <button onClick={() => addBuilding('calm_power_station')} className="px-2 py-1.5 text-xs bg-pink-600 hover:bg-pink-500 rounded truncate" title="Остров спокойствия">Остров спокойствия</button>
+          <button onClick={() => addBuilding('regret_recycling_station')} className="px-2 py-1.5 text-xs bg-sky-600 hover:bg-sky-500 rounded truncate" title="Станция Переработки Сожалений">Переработка сожалений</button>
         </div>
-        <p className="mt-2 text-sm text-gray-400">
-          Всего зданий: {buildings.length}
-        </p>
+        <h2 className="text-sm font-semibold text-gray-300 mt-3 mb-1">Цель камеры</h2>
+        <button onClick={() => setOrbitTarget([0, 0, 0])} className="px-2 py-1.5 text-xs bg-gray-600 hover:bg-gray-500 rounded truncate text-left" title="Орбита вокруг центра сетки">Центр сетки</button>
+        <div className="flex flex-col gap-1 mt-1">
+          {buildings.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setOrbitTarget([b.position.x, b.position.y, b.position.z])}
+              className="px-2 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 rounded truncate text-left"
+              title={`Орбита вокруг: ${b.name}`}
+            >
+              {b.name}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-auto pt-2">Зданий: {buildings.length}</p>
       </div>
 
-      {/* 3D Canvas */}
-      <div className="flex-1">
+      {/* 3D Canvas — на весь остаток экрана */}
+      <div className="flex-1 min-w-0">
         <Canvas>
-          <PerspectiveCamera makeDefault position={[5, 5, 5]} />
-          <OrbitControls enableDamping dampingFactor={0.05} />
-
-          {/* Освещение */}
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} intensity={1} />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
-          {/* Сетка для ориентации */}
-          <Grid args={[20, 20]} cellColor="#6f6f6f" sectionColor="#9d4b4b" />
-
-          {/* Здания */}
-          {buildings.map((building) => (
-            <BuildingFactory key={building.id} building={building} />
-          ))}
-
-          {/* Фиолетовый Сатурн (PurplePlanet) — над сеткой, выше самого высокого здания (макс. высота ~2.5) */}
-          <PurplePlanet
-            position={[8, 6, 8]}
-            scale={1.2}
-            rotationSpeed={0.08}
-          />
+          <SceneContent buildings={buildings} orbitTarget={orbitTarget} />
         </Canvas>
       </div>
     </div>

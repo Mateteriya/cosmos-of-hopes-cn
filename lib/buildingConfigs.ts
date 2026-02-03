@@ -118,7 +118,7 @@ export const buildingConfigs: Record<BuildingType, BuildingConfig> = {
   // Сфера Эмоций
   calm_power_station: {
     type: 'calm_power_station',
-    name: 'Электростанция Спокойствия',
+    name: 'Остров спокойствия',
     sphere: 'emotions',
     area: 'Лагуна Спокойствия',
     size: { width: 1.8, height: 1.5, depth: 1.8 },
