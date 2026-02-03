@@ -142,6 +142,9 @@ export default function CalmPowerStation({
   const rippleMeshRef = useRef<(THREE.Mesh | null)[]>([]);
   const prevFloatYRef = useRef(0.02);
   const lastImpactTimeRef = useRef(-10);
+  const panelLedMeshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const panelFloatRef = useRef<THREE.Group>(null);
+  const panelBaseYRef = useRef(0);
 
   const baseWidth = 1.8;
   const baseHeight = 1.5 * level;
@@ -504,6 +507,94 @@ export default function CalmPowerStation({
     return tex;
   }, []);
 
+  // Текстура панели Центра Управления — 6 символов, по одному над каждой кнопкой, с отступом (уменьшены, чтобы не накладываться)
+  const controlPanelSymbolsTexture = useMemo(() => {
+    const w = 256;
+    const h = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+    // Фон — светло-серебристый, в тон панели
+    ctx.fillStyle = '#b8b8c4';
+    ctx.fillRect(0, 0, w, h);
+    // Космически-фиолетовая рамка по контуру
+    ctx.strokeStyle = '#4b1a7a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2, 2, w - 4, h - 4);
+    const drawInventedSymbol = (cx: number, cy: number, seed: number, size: number) => {
+      const r = size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const drawPath = () => {
+        ctx.beginPath();
+        switch (seed % 6) {
+          case 0:
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.moveTo(cx, cy - r);
+            ctx.lineTo(cx, cy + r);
+            break;
+          case 1:
+            ctx.moveTo(cx - r, cy - r * 0.2);
+            ctx.quadraticCurveTo(cx, cy - r * 1.1, cx + r, cy - r * 0.2);
+            ctx.quadraticCurveTo(cx, cy + r * 1.1, cx - r, cy + r * 0.2);
+            break;
+          case 2:
+            ctx.moveTo(cx - r, cy);
+            ctx.lineTo(cx, cy - r);
+            ctx.lineTo(cx + r, cy);
+            ctx.quadraticCurveTo(cx, cy + r * 0.8, cx - r, cy);
+            break;
+          case 3:
+            ctx.moveTo(cx - r, cy - r * 0.7);
+            ctx.bezierCurveTo(cx + r, cy - r * 0.7, cx - r, cy + r * 0.7, cx + r, cy + r * 0.7);
+            break;
+          case 4:
+            ctx.moveTo(cx, cy - r);
+            ctx.lineTo(cx + r, cy);
+            ctx.lineTo(cx, cy + r);
+            ctx.lineTo(cx - r, cy);
+            ctx.closePath();
+            ctx.moveTo(cx, cy - r * 0.4);
+            ctx.lineTo(cx, cy + r * 0.4);
+            break;
+          default:
+            ctx.moveTo(cx - r, cy);
+            ctx.quadraticCurveTo(cx - r * 0.2, cy - r, cx, cy);
+            ctx.quadraticCurveTo(cx + r * 0.2, cy + r, cx + r, cy);
+            break;
+        }
+      };
+      // Тёмная каллиграфическая основа
+      drawPath();
+      ctx.strokeStyle = '#1e1e24';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+      // Серебристый верхний штрих
+      drawPath();
+      ctx.strokeStyle = '#c4c4d4';
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+    };
+    // 6 символов — по одному над каждой кнопкой; в текстуре низ canvas = низ панели, верх = верх, кнопки по центру (~y 32), символы выше
+    const nSymbols = 6;
+    const symbolR = 4;
+    const spacing = 0.72 / 8;
+    const btnX3D = (i: number) => (i - 2.5) * spacing * 0.85;
+    const planeW = 0.68;
+    const planeHalfW = 0.34;
+    const symbolY = 12;
+    for (let i = 0; i < nSymbols; i++) {
+      const x3D = btnX3D(i);
+      const u = (x3D + planeHalfW) / planeW;
+      const cx = Math.max(symbolR + 2, Math.min(w - symbolR - 2, u * w));
+      drawInventedSymbol(cx, symbolY, i, symbolR);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+
   // Общая плавная волнистая граница ручья — полярные координаты с волной, как у берега (без углов)
   const streamOuterSmoothBoundary = useMemo(() => {
     const gap = 0.06;
@@ -606,6 +697,99 @@ export default function CalmPowerStation({
     shape.holes.push(hole);
     return new THREE.ShapeGeometry(shape);
   }, [wallBottomY, wallHeight, doorCenterY, buildingCenterY]);
+
+  // Волнистая арочка: приподнята за вершину; концы раздвинуты в стороны — кончики по диагонали вниз в стороны
+  const wavyArchParams = useMemo(() => {
+    const doorBottom = doorLocalY - DOOR_HEIGHT / 2;
+    const hRect = DOOR_HEIGHT - DOOR_ARCH_RADIUS;
+    const archLowerOffset = 0.12;
+    const archRaise = 0.05; // приподнять рисунок за вершину
+    const arcCenterY = doorBottom + hRect + DOOR_ARCH_RADIUS - archLowerOffset + archRaise;
+    const baseR = DOOR_ARCH_RADIUS + 0.32;
+    const numWaves = 9;
+    const waveAmp = 0.028;
+    const stretchX = 1.22;
+    const stretchY = 0.72;
+    // Концы: по диагонали вниз НАРУЖУ — расширяем угол с обеих сторон, чтобы кончики не обрезались и смотрели в стороны
+    const tipAngle = 0.2;   // базовая позиция кончиков (вправо-вниз и влево-вниз)
+    const extendAngle = 0.18; // продление дуги за кончики — концы линии уходят наружу, не внутрь
+    const angleStart = -tipAngle - extendAngle;   // правый конец: дальше вправо-вниз (наружу)
+    const angleEnd = Math.PI + tipAngle + extendAngle; // левый конец: дальше влево-вниз (наружу)
+    const perpendicularOffsets = [-0.045, -0.015, 0.015, 0.045]; // 4 линии: постоянный отступ 0.03 по нормали по всей длине
+    const pointCount = 128;
+    const z = 0;
+    const centerPts: { x: number; y: number }[] = [];
+    for (let i = 0; i <= pointCount; i++) {
+      const t = i / pointCount;
+      const angle = angleStart + t * (angleEnd - angleStart);
+      const wave = waveAmp * Math.sin(angle * numWaves);
+      const r = baseR + 0.045 + wave; // центр между 4 линиями
+      centerPts.push({
+        x: r * Math.cos(angle) * stretchX,
+        y: arcCenterY + r * Math.sin(angle) * stretchY,
+      });
+    }
+    const normals: { nx: number; ny: number }[] = [];
+    for (let i = 0; i <= pointCount; i++) {
+      const prev = centerPts[Math.max(0, i - 1)];
+      const next = centerPts[Math.min(pointCount, i + 1)];
+      const tx = next.x - prev.x;
+      const ty = next.y - prev.y;
+      const len = Math.sqrt(tx * tx + ty * ty) || 1;
+      normals.push({ nx: ty / len, ny: -tx / len }); // outward normal
+    }
+    const curves: { x: number; y: number }[][] = perpendicularOffsets.map((off) =>
+      centerPts.map((p, i) => ({
+        x: p.x + off * normals[i].nx,
+        y: p.y + off * normals[i].ny,
+      }))
+    );
+    return { curves, z, pointCount };
+  }, [doorLocalY]);
+
+  const wavyArchDecoration = useMemo(() => {
+    const { curves, z, pointCount } = wavyArchParams;
+    const tubeRadius = 0.012;
+    const tubularSegments = 64;
+    const radialSegments = 6;
+    const colors = [0xffaa00, 0xff6ec7, 0x39ff14, 0x00ffff];
+    return curves.map((pts, lineIdx) => {
+      const curvePoints = pts.map((p) => new THREE.Vector3(p.x, p.y, z));
+      const curve = new THREE.CatmullRomCurve3(curvePoints, false);
+      const geom = new THREE.TubeGeometry(curve, tubularSegments, tubeRadius, radialSegments);
+      return { geometry: geom, color: colors[lineIdx] };
+    });
+  }, [doorLocalY, wavyArchParams]);
+
+  // Заполнение между линиями — космический индиго; ширина полос постоянна по всей длине
+  const wavyArchFillBands = useMemo(() => {
+    const { curves, z, pointCount } = wavyArchParams;
+    const bands: THREE.BufferGeometry[] = [];
+    for (let b = 0; b < curves.length - 1; b++) {
+      const inner = curves[b];
+      const outer = curves[b + 1];
+      const positions: number[] = [];
+      const indices: number[] = [];
+      for (let i = 0; i <= pointCount; i++) {
+        positions.push(inner[i].x, inner[i].y, z);
+        positions.push(outer[i].x, outer[i].y, z);
+      }
+      for (let i = 0; i < pointCount; i++) {
+        const a = 2 * i;
+        const b0 = 2 * i + 1;
+        const c = 2 * (i + 1);
+        const d = 2 * (i + 1) + 1;
+        indices.push(a, b0, c);
+        indices.push(b0, d, c);
+      }
+      const geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geom.setIndex(indices);
+      geom.computeVertexNormals();
+      bands.push(geom);
+    }
+    return bands;
+  }, [doorLocalY, wavyArchParams]);
 
   // Боковые стены с проёмами под окна — чтобы изнутри было видно наружу
   const sideWallWithWindowGeometry = useMemo(() => {
@@ -1881,6 +2065,27 @@ export default function CalmPowerStation({
         }
       }
     }
+
+    // Мигание диодов на панели Центра Управления (8 LED)
+    const PANEL_LED_COUNT = 8;
+    const blinkSpeed = 1.4;
+    const baseIntensity = 0.35;
+    const peakIntensity = 1.5;
+    for (let i = 0; i < PANEL_LED_COUNT; i++) {
+      const mesh = panelLedMeshRefs.current[i];
+      const mat = mesh?.material as THREE.MeshStandardMaterial | undefined;
+      if (mat && typeof mat.emissiveIntensity === 'number') {
+        const phase = time * blinkSpeed + i * 0.6;
+        mat.emissiveIntensity = baseIntensity + (peakIntensity - baseIntensity) * (0.5 + 0.5 * Math.sin(phase));
+      }
+    }
+
+    // Лёгкое парение панели Центра Управления
+    if (panelFloatRef.current) {
+      const floatAmp = 0.006;
+      const floatSpeed = 1.1;
+      panelFloatRef.current.position.y = panelBaseYRef.current + Math.sin(time * floatSpeed) * floatAmp;
+    }
   });
 
   return (
@@ -2140,7 +2345,7 @@ export default function CalmPowerStation({
         );
       })()}
 
-      {/* Мостик статичная часть — от суши до середины */}
+      {/* Мостик статичная часть — от суши до середины; DoubleSide чтобы изнутри здания был виден целиком */}
       <mesh geometry={bridgeStaticGeometry} renderOrder={5}>
         <meshStandardMaterial
           color={bridgeColor}
@@ -2148,6 +2353,7 @@ export default function CalmPowerStation({
           emissiveIntensity={active ? 0.25 : 0.12}
           roughness={0.6}
           metalness={0.15}
+          side={THREE.DoubleSide}
         />
       </mesh>
       {/* Перила статичная часть — слева и справа */}
@@ -2158,6 +2364,7 @@ export default function CalmPowerStation({
           emissiveIntensity={active ? 0.35 : 0.18}
           roughness={0.5}
           metalness={0.2}
+          side={THREE.DoubleSide}
         />
       </mesh>
       <mesh geometry={bridgeRailingStaticRight} renderOrder={6}>
@@ -2167,6 +2374,7 @@ export default function CalmPowerStation({
           emissiveIntensity={active ? 0.35 : 0.18}
           roughness={0.5}
           metalness={0.2}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -2217,7 +2425,7 @@ export default function CalmPowerStation({
 
       {/* Здание (парение) — парящая часть мостика синхронно с зданием */}
       <group ref={floatRef}>
-        {/* Мостик парящая часть — от середины к порогу проёма */}
+        {/* Мостик парящая часть — от середины к порогу проёма; DoubleSide чтобы изнутри здания был виден целиком */}
         <mesh ref={bridgeFloatingRef} geometry={bridgeFloatingGeometry} renderOrder={5}>
           <meshStandardMaterial
             color={bridgeColor}
@@ -2225,6 +2433,7 @@ export default function CalmPowerStation({
             emissiveIntensity={active ? 0.25 : 0.12}
             roughness={0.6}
             metalness={0.15}
+            side={THREE.DoubleSide}
           />
         </mesh>
         {/* Перила парящая часть — слева и справа */}
@@ -2235,6 +2444,7 @@ export default function CalmPowerStation({
             emissiveIntensity={active ? 0.35 : 0.18}
             roughness={0.5}
             metalness={0.2}
+            side={THREE.DoubleSide}
           />
         </mesh>
         <mesh ref={bridgeRailingFloatingRightRef} geometry={bridgeRailingFloatingRight} renderOrder={6}>
@@ -2244,6 +2454,7 @@ export default function CalmPowerStation({
             emissiveIntensity={active ? 0.35 : 0.18}
             roughness={0.5}
             metalness={0.2}
+            side={THREE.DoubleSide}
           />
         </mesh>
         <mesh position={[0, foundationCenterY, 0]} renderOrder={10}>
@@ -2408,7 +2619,7 @@ export default function CalmPowerStation({
             <planeGeometry args={[baseWidth, baseDepth]} />
             <meshStandardMaterial color={exteriorPearl} emissive={exteriorGlow} emissiveIntensity={active ? 0.35 : 0.2} metalness={0.15} roughness={0.8} side={THREE.DoubleSide} />
           </mesh>
-          {/* Фронт с проёмом */}
+          {/* Фронт с проёмом: снаружи — непрозрачная стена */}
           <mesh position={[0, 0, baseDepth / 2]} geometry={frontWallWithDoorGeometry} renderOrder={8}>
             <meshStandardMaterial
               color={exteriorPearl}
@@ -2416,12 +2627,99 @@ export default function CalmPowerStation({
               emissiveIntensity={active ? 0.35 : 0.2}
               metalness={0.15}
               roughness={0.8}
-              side={THREE.DoubleSide}
+              side={THREE.FrontSide}
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
             />
           </mesh>
+          {/* Изнутри — матовое стекло с фиолетово-сиреневым оттенком: сквозь него видна улица, лёгкий фиолетово-сиреневый фон */}
+          <mesh position={[0, 0, baseDepth / 2 - 0.001]} geometry={frontWallWithDoorGeometry} renderOrder={7}>
+            <meshStandardMaterial
+              color={0xd8cce8}
+              emissive={0xb0a0c8}
+              emissiveIntensity={0.08}
+              metalness={0.02}
+              roughness={0.85}
+              transparent
+              opacity={0.42}
+              side={THREE.BackSide}
+              polygonOffset
+              polygonOffsetFactor={2}
+              polygonOffsetUnits={1}
+              depthWrite={false}
+            />
+          </mesh>
+          {/* Волнистая арочка снаружи: космические отступы — интенсивный неон; 4 линии — приглушённая яркость */}
+          <group position={[0, 0, baseDepth / 2 + 0.003]} renderOrder={9}>
+            {wavyArchFillBands.map((geometry, idx) => (
+              <mesh key={`fill-ext-${idx}`} geometry={geometry} renderOrder={8}>
+                <meshStandardMaterial
+                  color={0x5e35b1}
+                  emissive={0x7c4dff}
+                  emissiveIntensity={active ? 0.95 : 0.75}
+                  metalness={0.05}
+                  roughness={0.4}
+                  side={THREE.DoubleSide}
+                  polygonOffset
+                  polygonOffsetFactor={-1}
+                  polygonOffsetUnits={0}
+                />
+              </mesh>
+            ))}
+            {wavyArchDecoration.map(({ geometry, color }, idx) => (
+              <mesh key={idx} geometry={geometry} renderOrder={9}>
+                <meshStandardMaterial
+                  color={color}
+                  emissive={color}
+                  emissiveIntensity={active ? 0.28 : 0.18}
+                  metalness={0.15}
+                  roughness={0.6}
+                  side={THREE.DoubleSide}
+                  polygonOffset
+                  polygonOffsetFactor={1}
+                  polygonOffsetUnits={1}
+                />
+              </mesh>
+            ))}
+          </group>
+          {/* Волнистая арочка изнутри: сами линии и полосы полупрозрачные — как цветные стёкла, видно снаружи */}
+          <group position={[0, 0, baseDepth / 2 - 0.003]} renderOrder={9}>
+            {wavyArchFillBands.map((geometry, idx) => (
+              <mesh key={`fill-int-${idx}`} geometry={geometry} renderOrder={8}>
+                <meshStandardMaterial
+                  color={0x5e35b1}
+                  emissive={0x7c4dff}
+                  emissiveIntensity={active ? 0.95 : 0.75}
+                  metalness={0.05}
+                  roughness={0.4}
+                  side={THREE.DoubleSide}
+                  transparent
+                  opacity={0.55}
+                  polygonOffset
+                  polygonOffsetFactor={-1}
+                  polygonOffsetUnits={0}
+                />
+              </mesh>
+            ))}
+            {wavyArchDecoration.map(({ geometry, color }, idx) => (
+              <mesh key={`line-int-${idx}`} geometry={geometry} renderOrder={9}>
+                <meshStandardMaterial
+                  color={color}
+                  emissive={color}
+                  emissiveIntensity={active ? 0.55 : 0.4}
+                  metalness={0.15}
+                  roughness={0.5}
+                  side={THREE.DoubleSide}
+                  transparent
+                  opacity={0.55}
+                  polygonOffset
+                  polygonOffsetFactor={1}
+                  polygonOffsetUnits={1}
+                />
+              </mesh>
+            ))}
+          </group>
           {/* Рамка проёма — левый косяк */}
           <mesh position={[
             -DOOR_WIDTH / 2 - DOOR_FRAME_THICKNESS / 2,
@@ -2466,17 +2764,17 @@ export default function CalmPowerStation({
               roughness={0.6}
             />
           </mesh>
-          {/* Занавески-дуги — наверху проёма (вершина лепестка в позиции меша) */}
+          {/* Занавески-дуги — наверху проёма: суперяркий неон ультрафиолетово-космический индиго */}
           <mesh
             position={[0, doorLocalY + DOOR_HEIGHT / 2 + DOOR_ARCH_RADIUS, curtainZ + 0.02]}
             geometry={archCurtainLeftGeometry}
             renderOrder={12}
           >
             <meshStandardMaterial
-              color={0x8b5a9e}
-              emissive={0xc8a8e8}
-              emissiveIntensity={active ? 0.3 : 0.15}
-              roughness={0.8}
+              color={0x5e35b1}
+              emissive={0x7c4dff}
+              emissiveIntensity={active ? 0.9 : 0.7}
+              roughness={0.5}
               metalness={0.05}
               side={THREE.DoubleSide}
               polygonOffset
@@ -2490,10 +2788,10 @@ export default function CalmPowerStation({
             renderOrder={12}
           >
             <meshStandardMaterial
-              color={0x8b5a9e}
-              emissive={0xc8a8e8}
-              emissiveIntensity={active ? 0.3 : 0.15}
-              roughness={0.8}
+              color={0x5e35b1}
+              emissive={0x7c4dff}
+              emissiveIntensity={active ? 0.9 : 0.7}
+              roughness={0.5}
               metalness={0.05}
               side={THREE.DoubleSide}
               polygonOffset
@@ -2511,7 +2809,7 @@ export default function CalmPowerStation({
               roughness={0.3}
             />
           </mesh>
-          {/* Занавески: висят в проёме (внутри отверстия), чтобы видны через прозрачный проём */}
+          {/* Занавески: висят в проёме — суперяркий неон ультрафиолетово-космический индиго */}
           {/* Левая — внутри проёма, по левому краю */}
           <mesh
             position={[-DOOR_WIDTH / 2 + curtainWidth / 2, curtainCenterY, curtainZ + 0.02]}
@@ -2519,10 +2817,10 @@ export default function CalmPowerStation({
             renderOrder={12}
           >
             <meshStandardMaterial
-              color={0x8b5a9e}
-              emissive={0xc8a8e8}
-              emissiveIntensity={active ? 0.3 : 0.15}
-              roughness={0.8}
+              color={0x5e35b1}
+              emissive={0x7c4dff}
+              emissiveIntensity={active ? 0.9 : 0.7}
+              roughness={0.5}
               metalness={0.05}
               side={THREE.DoubleSide}
               polygonOffset
@@ -2538,10 +2836,10 @@ export default function CalmPowerStation({
             renderOrder={12}
           >
             <meshStandardMaterial
-              color={0x8b5a9e}
-              emissive={0xc8a8e8}
-              emissiveIntensity={active ? 0.3 : 0.15}
-              roughness={0.8}
+              color={0x5e35b1}
+              emissive={0x7c4dff}
+              emissiveIntensity={active ? 0.9 : 0.7}
+              roughness={0.5}
               metalness={0.05}
               side={THREE.DoubleSide}
               polygonOffset
@@ -2626,10 +2924,12 @@ export default function CalmPowerStation({
               polygonOffsetUnits={-2}
             />
           </mesh>
-          {/* Рамка полукруглого окна внутри — плоская (одна плоскость), без мельтешения */}
+          {/* Рамка полукруглого окна внутри — плоская (одна плоскость), строго в одной плоскости со стеклом + микро-сдвиг вперёд */}
           {(() => {
             const R = BACK_WINDOW_R;
             const foh = 0.003;
+            const interiorWindowZ = -baseDepth / 2 + 0.06 + 0.008;
+            const interiorFrameZ = interiorWindowZ + 0.001; // плоская рамка чуть впереди стекла — без наложения
             const shape = new THREE.Shape();
             shape.moveTo(-R - foh, 0);
             shape.lineTo(R + foh, 0);
@@ -2641,7 +2941,7 @@ export default function CalmPowerStation({
             shape.holes.push(hole);
             const frameGeom = new THREE.ShapeGeometry(shape);
             return (
-                <mesh position={[0, 0.06, -baseDepth / 2 + 0.06 + 0.008]} geometry={frameGeom} renderOrder={12}>
+                <mesh position={[0, 0.06, interiorFrameZ]} geometry={frameGeom} renderOrder={12}>
                 <meshStandardMaterial
                   color={0xf0e8ff}
                   emissive={0xe0d8f0}
@@ -2656,18 +2956,23 @@ export default function CalmPowerStation({
               </mesh>
             );
           })()}
-          {/* Занавески на полукруглом окне — дуги сверху + маленькие хвосты с кольцами справа и слева, совмещённые с концами дуг */}
+          {/* Занавески на полукруглом окне — дуги не доходят до нижней границы окна/рамки (видимый зазор) */}
           {(() => {
+            const interiorFrameZ = -baseDepth / 2 + 0.06 + 0.009; // рамка: стекло + 1мм вперёд
+            const CURTAIN_FRAME_GAP = 0.02; // зазор занавесок от рамки по Z
+            const FRAME_EDGE_Y = 0.06; // нижняя граница окна/рамки изнутри (мировая Y)
+            const ARCH_BOTTOM_CLEARANCE = 0.025; // зазор между низом дуг и рамкой — дуги не накладываются на рамку
             const curtainRaise = 0.03;
             const curtainVertexY = 0.06 + BACK_WINDOW_R - 0.03 + curtainRaise;
             const arcR = backWindowArchCurtainR * backWindowArchSpread;
-            const curtainGap = 0.004;
-            const curtainZ = -baseDepth / 2 + 0.06 + 0.02 + curtainGap;
-            const tailZ = curtainZ - 0.012;
-            const rodZ = -baseDepth / 2 + 0.06 + 0.008;
-            const rodForward = 0.006;
+            const archFullHeight = arcR * backWindowArchThick; // высота дуги в геометрии
+            const arcBottomY = FRAME_EDGE_Y - ARCH_BOTTOM_CLEARANCE; // низ дуг строго выше рамки
+            const archScaleY = (curtainVertexY - arcBottomY) / archFullHeight; // укорачиваем дугу по Y, чтобы не заходить за рамку
+            const curtainZ = interiorFrameZ + CURTAIN_FRAME_GAP;
+            const tailZ = curtainZ - 0.008;
+            const rodZ = interiorFrameZ + 0.008;
+            const rodForward = 0.004;
             const rodZVisible = rodZ + rodForward;
-            const arcBottomY = curtainVertexY - arcR * backWindowArchThick;
             const tailRaise = 0.012;
             const curtainCenterY = arcBottomY - backWindowCurtainHeight / 2 + tailRaise;
             const curtainRingY = curtainCenterY + backWindowCurtainHeight * (0.5 - backWindowCurtainRingT);
@@ -2773,11 +3078,11 @@ export default function CalmPowerStation({
                   <cylinderGeometry args={[0.003, 0.003, 0.12, 8]} />
                   <meshStandardMaterial color={0xff8c00} emissive={0xffa020} emissiveIntensity={(active ? 0.25 : 0.15) as number} metalness={0.2} roughness={0.8} />
                 </mesh>
-                {/* Вершина — соединяющая дуга (две половинки), клетчатый узор */}
-                <mesh position={[0, curtainVertexY, curtainZ]} geometry={backWindowArchCurtainLeftGeometry} renderOrder={12}>
+                {/* Вершина — соединяющая дуга (две половинки), низ дуг не доходит до рамки окна */}
+                <mesh position={[0, curtainVertexY, curtainZ]} scale={[1, archScaleY, 1]} geometry={backWindowArchCurtainLeftGeometry} renderOrder={12}>
                   <meshStandardMaterial {...curtainMat} map={backWindowCheckeredTexture} />
                 </mesh>
-                <mesh position={[0, curtainVertexY, curtainZ]} geometry={backWindowArchCurtainRightGeometry} renderOrder={12}>
+                <mesh position={[0, curtainVertexY, curtainZ]} scale={[1, archScaleY, 1]} geometry={backWindowArchCurtainRightGeometry} renderOrder={12}>
                   <meshStandardMaterial {...curtainMat} map={backWindowCheckeredTexture} />
                 </mesh>
                 {/* Кольца в месте соединения дуг и хвостов — оранжевые, толще (хвосты ближе к стене) */}
@@ -2917,6 +3222,43 @@ export default function CalmPowerStation({
               </>
             );
           })()}
+          {/* Лестница из трёх ступенек: от порога проёма до пола внутри */}
+          {(() => {
+            const interiorFloorY = -(baseHeight - foundationHeight) / 2 + 0.12;
+            const doorThresholdLocalY = doorLocalY - DOOR_HEIGHT / 2;
+            const totalDrop = doorThresholdLocalY - interiorFloorY;
+            const stepThickness = 0.04;
+            const rise = (totalDrop - stepThickness) / 2; // два подъёма между тремя ступенями
+            const stepDepth = 0.2;
+            const stepWidth = DOOR_WIDTH - 0.08;
+            const stairsZStart = baseDepth / 2 - 0.002;
+            const stairColor = 0x9a8fb8;
+            const stairEmissive = 0x7a6f98;
+            return (
+              <group renderOrder={10}>
+                {[0, 1, 2].map((i) => (
+                  <mesh
+                    key={i}
+                    position={[
+                      0,
+                      doorThresholdLocalY - stepThickness / 2 - i * rise,
+                      stairsZStart - stepDepth * (i + 0.5)
+                    ]}
+                    renderOrder={10}
+                  >
+                    <boxGeometry args={[stepWidth, stepThickness, stepDepth]} />
+                    <meshStandardMaterial
+                      color={stairColor}
+                      emissive={stairEmissive}
+                      emissiveIntensity={active ? 0.15 : 0.08}
+                      metalness={0.1}
+                      roughness={0.7}
+                    />
+                  </mesh>
+                ))}
+              </group>
+            );
+          })()}
           {/* Внутренний пол — выше внешнего пола и фундамента, чтобы не мельтешить */}
           <mesh position={[0, -(baseHeight - foundationHeight) / 2 + 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={9}>
             <planeGeometry args={[baseWidth - 0.12, baseDepth - 0.12]} />
@@ -2968,6 +3310,127 @@ export default function CalmPowerStation({
               />
             </mesh>
           </group>
+          {/* Центр Управления Островом — парящая полупрозрачная панель над кроватью */}
+          {(() => {
+            const bedGroupY = -(baseHeight - foundationHeight) / 2 + 0.12 + 0.06;
+            const mattressTopY = bedGroupY + 0.06;
+            const panelFloatY = mattressTopY + 0.22;
+            // Панель у изголовья: совпадает с началом матраса по Z
+            const panelZ = -0.6;
+            const panelW = 0.72;
+            const panelH = 0.14;
+            const panelThickness = 0.018;
+            const btnR = 0.02;
+            const btnDepth = 0.004;
+            const ledR = 0.007;
+            const leverW = 0.018;
+            const leverH = 0.028;
+            const nButtons = 6;
+            const nLeds = 8;
+            const nLevers = 3;
+            const spacing = panelW / (nButtons + 2);
+            const frontFaceZ = panelThickness / 2;
+            panelBaseYRef.current = panelFloatY;
+            return (
+              <group ref={panelFloatRef} position={[0, panelFloatY, panelZ]} renderOrder={12}>
+                {/* Корпус панели — космически-фиолетовый, полупрозрачный (задняя панель и рамка) */}
+                <RoundedBox args={[panelW, panelH, panelThickness]} radius={0.012} smoothness={4} position={[0, 0, 0]} renderOrder={11}>
+                  <meshStandardMaterial
+                    color={0x3a0f6a}
+                    emissive={0x5a1c8a}
+                    emissiveIntensity={0.12}
+                    metalness={0.45}
+                    roughness={0.5}
+                    transparent
+                    opacity={0.78}
+                  />
+                </RoundedBox>
+                {/* Лицевая плоскость с символами — только в верхней зоне, не перекрывают кнопки/диоды */}
+                <mesh position={[0, 0, frontFaceZ + 0.001]} renderOrder={12}>
+                  <planeGeometry args={[panelW - 0.04, panelH - 0.02]} />
+                  <meshBasicMaterial
+                    map={controlPanelSymbolsTexture}
+                    color={0xffffff}
+                    transparent
+                    opacity={0.92}
+                    side={THREE.DoubleSide}
+                    depthWrite={true}
+                  />
+                </mesh>
+                {/* Кнопки — 6 больших, разноцветные (синие, фиолетовые и др.) */}
+                {(() => {
+                  const btnColors = [
+                    { color: 0x4a7ec8, emissive: 0x5a8ed8 },
+                    { color: 0x6a4a9e, emissive: 0x7a5aae },
+                    { color: 0x4a9e9e, emissive: 0x5aaebe },
+                    { color: 0x8a4a9e, emissive: 0x9a5aae },
+                    { color: 0x4a6a9e, emissive: 0x5a7aae },
+                    { color: 0x9e6a8a, emissive: 0xae7a9a },
+                  ];
+                  return Array.from({ length: nButtons }, (_, i) => {
+                    const x = (i - (nButtons - 1) / 2) * spacing * 0.85;
+                    const c = btnColors[i % btnColors.length];
+                    return (
+                      <group key={`btn-${i}`} position={[x, 0.01, frontFaceZ + btnDepth / 2 + 0.001]} renderOrder={13}>
+                        <mesh rotation={[Math.PI / 2, 0, 0]}>
+                          <cylinderGeometry args={[btnR, btnR, btnDepth, 24]} />
+                          <meshStandardMaterial
+                            color={c.color}
+                            emissive={c.emissive}
+                            emissiveIntensity={active ? 0.2 : 0.1}
+                            metalness={0.4}
+                            roughness={0.5}
+                          />
+                        </mesh>
+                      </group>
+                    );
+                  });
+                })()}
+                {/* Индикаторы-диодики — маленькие точки на панели, мигают */}
+                {Array.from({ length: nLeds }, (_, i) => {
+                  const x = (i - (nLeds - 1) / 2) * (panelW / (nLeds + 1)) * 0.88;
+                  const colors = [0xff6080, 0x60ffa0, 0x60c0ff, 0xffc060];
+                  return (
+                    <mesh
+                      key={`led-${i}`}
+                      ref={(el) => {
+                        if (el) panelLedMeshRefs.current[i] = el;
+                      }}
+                      position={[x, -0.03, frontFaceZ + 0.003]}
+                      renderOrder={13}
+                    >
+                      <sphereGeometry args={[ledR, 12, 10]} />
+                      <meshStandardMaterial
+                        color={colors[i % colors.length]}
+                        emissive={colors[i % colors.length]}
+                        emissiveIntensity={0.8}
+                        roughness={0}
+                        metalness={0}
+                      />
+                    </mesh>
+                  );
+                })}
+                {/* Рычажки — металлические полоски */}
+                {Array.from({ length: nLevers }, (_, i) => {
+                  const x = (i - 1) * spacing * 0.9;
+                  return (
+                    <group key={`lev-${i}`} position={[x, -0.046, frontFaceZ + 0.004]} rotation={[0.12, 0, 0]} renderOrder={13}>
+                      <mesh>
+                        <boxGeometry args={[leverW, leverH, 0.006]} />
+                        <meshStandardMaterial
+                          color={0x9098a8}
+                          emissive={0x505860}
+                          emissiveIntensity={0.04}
+                          metalness={0.82}
+                          roughness={0.28}
+                        />
+                      </mesh>
+                    </group>
+                  );
+                })}
+              </group>
+            );
+          })()}
           {/* Внутренний потолок */}
           <mesh position={[0, (baseHeight - foundationHeight) / 2 - 0.06, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <planeGeometry args={[baseWidth - 0.12, baseDepth - 0.12]} />
